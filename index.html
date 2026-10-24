@@ -83,6 +83,25 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 .cue.on p{text-shadow:0 0 26px color-mix(in srgb,var(--ac) 45%,transparent)}
 #nav button svg{display:block;margin:0 auto 2px}
 .row .btn,.row button,.row select{border-radius:999px}
+
+#sh.rich{padding:0;max-height:88vh}#sh .grab{width:42px;height:4px;border-radius:4px;background:var(--line);margin:8px auto 0}
+.xs{position:absolute;top:10px;right:12px;width:34px;height:34px;border-radius:50%;padding:0;display:grid;place-items:center;border:0;background:color-mix(in srgb,var(--fg) 8%,transparent)}
+.wh{padding:8px 18px 14px;background:linear-gradient(180deg,color-mix(in srgb,var(--ac) 16%,transparent),transparent)}
+.wt{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding-right:40px}.wt h2{font-size:34px;line-height:1.1;margin:0;letter-spacing:-.02em;display:block}.wt .art{font-size:22px}
+.chp{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--ac) 16%,transparent);color:var(--ac);margin:8px 6px 0 0}
+.wmain{font-size:21px;font-weight:600;margin-top:10px;line-height:1.3}
+.sec{margin:10px 14px;padding:12px 14px;border-radius:16px;background:var(--bg);border:1px solid var(--line)}
+.sec h4{margin:0 0 8px;font-size:11.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--mut)}.sec p{margin:2px 0 8px}
+.cs{font-family:Georgia,serif;font-size:18px;line-height:1.5}mark{background:color-mix(in srgb,var(--ac) 30%,transparent);color:inherit;border-radius:5px;padding:0 3px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.lab{font-size:10.5px;font-weight:700;letter-spacing:.08em;color:var(--ac)}
+.ml{margin:0;padding-left:20px}.ml li{margin:3px 0}
+.cx{display:inline-flex;flex-direction:column;align-items:flex-start;margin:0 6px 6px 0;padding:7px 12px;border-radius:14px;text-align:left;line-height:1.25}.cx span{font-size:12px;color:var(--mut)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:8px 16px}.kv b{color:var(--mut);font-weight:600}
+.exr{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line)}.exr:first-of-type{border-top:0;padding-top:0}.mi{width:30px;height:30px;padding:0;display:grid;place-items:center;border-radius:50%;flex:none}
+.tip{background:color-mix(in srgb,var(--ac) 10%,var(--bg))}
+.actbar{position:sticky;bottom:0;display:flex;gap:8px;padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line)}.actbar button{border-radius:999px}
+.sk{height:64px;margin:10px 14px;border-radius:16px;background:linear-gradient(90deg,var(--line),color-mix(in srgb,var(--line) 40%,var(--card)),var(--line));background-size:200% 100%;animation:shm 1.2s infinite linear}@keyframes shm{to{background-position:-200% 0}}
+@media(max-width:380px){.two{grid-template-columns:1fr}}
 </style></head><body>
 <div id="app"></div>
 <div id="mini" hidden><b data-a="expand"></b><button data-a="back">⏪</button><button data-a="pp">▶</button><button data-a="fwd">⏩</button></div>
@@ -105,12 +124,12 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt=s=>{s=Math.max(0,s|0);const h=s/3600|0,m=(s%3600)/60|0;return(h?h+':'+String(m).padStart(2,'0'):m)+':'+String(s%60).padStart(2,'0')};
-const P={down:'<path d="M6 9l6 6 6-6"/>',plus:'<path d="M12 5v14M5 12h14"/>',heart:'<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>',trash:'<path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',prev:'<path d="M19 20L9 12l10-8v16zM5 19V5"/>',next:'<path d="M5 4l10 8-10 8V4zM19 5v14"/>',play:'<polygon points="7 4 20 12 7 20 7 4" fill="currentColor"/>',pause:'<rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor"/>',ccw:'<path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>',cw:'<path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/>',head:'<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>',film:'<rect x="2" y="2" width="20" height="20" rx="3"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/>',globe:'<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',tv:'<rect x="2" y="7" width="20" height="15" rx="2"/><path d="M17 2l-5 5-5-5"/>',sliders:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>'};
+const P={down:'<path d="M6 9l6 6 6-6"/>',x:'<path d="M18 6L6 18M6 6l12 12"/>',vol:'<path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>',bm:'<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>',ok:'<path d="M20 6L9 17l-5-5"/>',plus:'<path d="M12 5v14M5 12h14"/>',heart:'<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>',trash:'<path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',prev:'<path d="M19 20L9 12l10-8v16zM5 19V5"/>',next:'<path d="M5 4l10 8-10 8V4zM19 5v14"/>',play:'<polygon points="7 4 20 12 7 20 7 4" fill="currentColor"/>',pause:'<rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor"/>',ccw:'<path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>',cw:'<path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/>',head:'<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>',film:'<rect x="2" y="2" width="20" height="20" rx="3"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/>',globe:'<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',tv:'<rect x="2" y="7" width="20" height="15" rx="2"/><path d="M17 2l-5 5-5-5"/>',sliders:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>'};
 function ic(n,s=22,f){return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`}
 const skipIc=d=>`<svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[d<0?'ccw':'cw']}<text x="12" y="15.2" font-size="7.5" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">${D.set.skip}</text></svg>`;
 const hue=n=>{let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))>>>0;return h%360};
 function icons(){$$('[data-a=close]').forEach(b=>b.innerHTML=ic('down',26));$$('[data-a=addpl]').forEach(b=>b.innerHTML=ic('plus',22));$$('[data-a=back]').forEach(b=>b.innerHTML=skipIc(-1));$$('[data-a=fwd]').forEach(b=>b.innerHTML=skipIc(1));$$('[data-a=ps]').forEach(b=>b.innerHTML=ic('prev',24));$$('[data-a=ns]').forEach(b=>b.innerHTML=ic('next',24));$('#pp').innerHTML=ic(M.paused?'play':'pause',28,true);if(cur)pf();mini()}
-const DEF={theme:'auto',ac:'#4f46e5',skip:10,speed:1,cap:20,lyr:22,pause:true,rew:2,capm:'de',lvl:'B2',peek:true,keys:{},models:{},prim:'gemini',fb:true};
+const DEF={theme:'auto',ac:'#4f46e5',skip:10,speed:1,cap:20,lyr:22,pause:true,rew:2,capm:'de',lvl:'B1',peek:true,keys:{},models:{},prim:'gemini',fb:true};
 let D={lib:[],pl:{},fav:{},pos:{},rate:{},tr:{},tl:{},vocab:[],set:{}};
 try{Object.assign(D,JSON.parse(localStorage.getItem('pcfy')||'{}'))}catch(e){}
 D.set={...DEF,...D.set};
@@ -247,19 +266,39 @@ async function ai(pr){
  if(!order.length)throw new Error('na');let err;
  for(const p of order){try{return jp(await raw(p,pr))}catch(e){err=e;if(D.set.fb===false)break}}
  throw err}
-function sheet(h){const s=$('#sh');s.innerHTML=h;s.hidden=false}
+function sheet(h,rich){const s=$('#sh');s.innerHTML=h;s.hidden=false;s.classList.toggle('rich',!!rich);s.scrollTop=0}
 function closeSh(){$('#sh').hidden=true;tw.style.visibility='';dkEnd=0;if(cur&&!cur.yt)M.playbackRate=D.rate[cur.id]||D.set.speed;$$('.sel').forEach(e=>e.classList.remove('sel'));anc=null;if(pausedBy&&cur){M.play().catch(()=>{});pausedBy=false}}
 const clean=s=>s.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu,'');
+const nn=v=>v&&v!=='null'&&v!=='N/A'&&v!=='none';
+const rxe=t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+function hlc(ctx,w){try{return esc(ctx).replace(new RegExp('('+rxe(esc(w))+')','i'),'<mark>$1</mark>')}catch(e){return esc(ctx)}}
+const sec=(t,b)=>b?`<div class="sec"><h4>${t}</h4>${b}</div>`:'';
+const cxs=a=>(Array.isArray(a)?a:[]).map(x=>typeof x==='string'?{de:x}:x).filter(x=>x&&x.de).map(x=>`<button class="cx" data-a="lk" data-w="${esc(x.de)}"><b>${esc(x.de)}</b>${x.en?`<span>${esc(x.en)}</span>`:''}</button>`).join('');
+const act=(sv,extra='')=>`<div class="actbar"><button data-a="say" data-t="${esc(L.say||L.w)}" title="Listen">${ic('vol',18)}</button><button class="p" data-a="sv" style="flex:1;display:flex;gap:6px;justify-content:center;align-items:center">${ic('bm',18)} ${sv}</button>${extra}<button data-a="shx">Close</button></div>`;
+const top=`<div class="grab"></div><button class="xs" data-a="shx">${ic('x',18)}</button>`;
+const expl=r=>(nn(r.def_de)?`<span class="lab">DEUTSCH</span><p>${esc(r.def_de)}</p>`:'')+(nn(r.explain_en)?`<span class="lab">ENGLISH</span><p>${esc(r.explain_en)}</p>`:'');
+function wview(w,r,ctx){
+ L={w,r,ctx,say:r.lemma||w};const a=nn(r.article)?r.article:'',en=(Array.isArray(r.en)?r.en:[r.en]).filter(Boolean),g=r.grammar&&typeof r.grammar==='object'?Object.entries(r.grammar).filter(([k,v])=>nn(v)):[];
+ const kv=[...(a&&nn(r.plural)?[['Plural',r.plural]]:[]),...(nn(r.genitive)?[['Genitiv',r.genitive]]:[]),...g];
+ sheet(`${top}<div class="wh"><div class="wt">${a?`<span class="art ${a}">${esc(a)}</span>`:''}<h2>${esc(r.lemma||w)}</h2></div><div>${nn(r.pos)?`<span class="chp">${esc(r.pos)}</span>`:''}${nn(r.cefr)?`<span class="chp">${esc(r.cefr)}</span>`:''}${nn(r.register)&&r.register!=='neutral'?`<span class="chp">${esc(r.register)}</span>`:''}${nn(r.ipa)?`<span class="mut" style="margin-left:6px">/${esc(r.ipa)}/</span>`:''}</div><div class="wmain">${esc(en[0]||'')}</div></div>
+${sec('In this sentence',`<p class="cs">${hlc(ctx,w)}</p>${nn(r.sentence_en)?`<p class="mut" style="margin:4px 0 10px">${esc(r.sentence_en)}</p>`:''}<div class="two"><div><span class="lab">ENGLISH</span><p>${esc(r.sense_en||'')}</p></div><div><span class="lab">DEUTSCH</span><p>${esc(r.sense_de||'')}</p></div></div>`)}
+${sec('All meanings',en.length>1?`<ol class="ml">${en.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`:'')}
+${sec('Explanation',expl(r))}${sec('Synonyms',cxs(r.synonyms))}${sec('Opposites',cxs(r.antonyms))}${sec('Word family',cxs(r.family)+(nn(r.compound)?`<p class="mut">Compound: ${esc(r.compound)}</p>`:''))}
+${sec('Grammar',kv.length?`<div class="kv">${kv.map(([k,v])=>`<b>${esc(k)}</b><span>${esc(v)}</span>`).join('')}</div>`:'')}
+${sec('Common phrases',cxs(r.collocations))}${sec('Examples',(r.examples||[]).map(e=>`<div class="exr"><button data-a="say" data-t="${esc(e.de)}" class="mi">${ic('vol',16)}</button><div><div>${esc(e.de)}</div><div class="mut">${esc(e.en)}</div></div></div>`).join(''))}
+${nn(r.tip)?`<div class="sec tip"><h4>Tip</h4><p>${esc(r.tip)}</p></div>`:''}${act('Save word',`<button data-a="kn">${ic('ok',18)} Known</button>`)}`,1)}
+function pview(txt,r,ctx){L={w:txt,r:{lemma:txt,en:[r.en],def_de:r.def_de},ctx,say:txt};
+ sheet(`${top}<div class="wh"><span class="chp">Phrase</span>${nn(r.register)?`<span class="chp">${esc(r.register)}</span>`:''}<div class="wt"><h2 style="font-size:24px">${esc(txt)}</h2></div><div class="wmain">${esc(r.en||'')}</div></div>
+${sec('In context',`<p class="cs">${hlc(ctx,txt)}</p>`)}${sec('Word by word',nn(r.literal)?`<p>${esc(r.literal)}</p>`:'')}${sec('Explanation',expl(r))}${sec('Idiom',nn(r.idiom)?`<p>${esc(r.idiom)}</p>`:'')}${sec('Grammar',nn(r.grammar)?`<p>${esc(r.grammar)}</p>`:'')}${sec('Key words',cxs(r.key))}${act('Save phrase')}`,1)}
 async function look(txt,ctx,phrase){
  if(D.set.pause&&!M.paused&&!pausedBy){M.pause();pausedBy=true}
- sheet(`<h3>${esc(txt)}</h3><p class="mut">Looking up…</p>`);
+ sheet(`${top}<div class="wh"><div class="wt"><h2>${esc(txt)}</h2></div></div><div class="sk"></div><div class="sk"></div><div class="sk" style="width:60%"></div>`,1);
+ const lv=D.set.lvl;
  try{
-  if(!phrase){const r=await ai(`You are a German tutor for an English speaker at level ${D.set.lvl}. Sentence: "${ctx}". Tapped word: "${txt}". Reply ONLY with JSON: {"lemma":"","pos":"","article":"der|die|das or null","plural":"or null","en":["meanings"],"de":"short German definition","sense":"what it means in THIS sentence, in English","forms":"verb forms like gab auf / aufgegeben, or null","separable":"full separable verb if this sentence uses one, else null","compound":"split like Hand+Schuh, or null","examples":[{"de":"","en":""},{"de":"","en":""}]}`);L={w:txt,r,ctx};
-   const a=r.article&&r.article!=='null'?r.article:'',nn=v=>v&&v!=='null';
-   sheet(`<div><span class="art ${a}">${esc(a)}</span><h2>${esc(r.lemma||txt)}</h2><span class="mut">${esc(r.pos||'')}${nn(r.plural)?' · pl. '+esc(r.plural):''}</span></div><p><b>Here:</b> ${esc(r.sense)}</p><p><b>English:</b> ${(r.en||[]).map(esc).join(' · ')}</p><p><b>Deutsch:</b> ${esc(r.de)}</p>${nn(r.forms)?`<p><b>Forms:</b> ${esc(r.forms)}</p>`:''}${nn(r.separable)?`<p><b>Separable verb:</b> ${esc(r.separable)}</p>`:''}${nn(r.compound)?`<p><b>Compound:</b> ${esc(r.compound)}</p>`:''}${(r.examples||[]).map(e=>`<p class="ex">${esc(e.de)}<br><span class="mut">${esc(e.en)}</span></p>`).join('')}<div class="row"><button data-a="say" data-t="${esc(r.lemma||txt)}">🔊</button><button class="p" data-a="sv">＋ Save word</button><button data-a="kn">✓ Known</button><button data-a="shx">Close</button></div>`)}
-  else{const r=await ai(`You are a German tutor for an English speaker at level ${D.set.lvl}. Sentence: "${ctx}". Selected phrase: "${txt}". Reply ONLY with JSON: {"en":"natural English translation","literal":"word-by-word gloss","de":"simple German explanation","idiom":"idiom meaning or null","grammar":"short grammar note (tense, clause, word order)"}`);L={w:txt,r:{lemma:txt,en:[r.en],de:r.de},ctx};
-   sheet(`<h3>${esc(txt)}</h3><p><b>English:</b> ${esc(r.en)}</p><p><b>Literal:</b> ${esc(r.literal)}</p><p><b>Deutsch:</b> ${esc(r.de)}</p>${r.idiom&&r.idiom!=='null'?`<p><b>Idiom:</b> ${esc(r.idiom)}</p>`:''}<p><b>Grammar:</b> ${esc(r.grammar)}</p><div class="row"><button data-a="say" data-t="${esc(txt)}">🔊</button><button class="p" data-a="sv">＋ Save phrase</button><button data-a="shx">Close</button></div>`)}
- }catch(e){let d='';try{d=await wikt(txt)}catch(_){}sheet(`<h3>${esc(txt)}</h3>${d?`<p class="mut">Dictionary (Wiktionary)</p><p style="white-space:pre-wrap">${esc(d)}</p>`:'<p class="mut">No AI available and no dictionary result. Add an API key in Settings, or connect to the internet.</p>'}<div class="row"><button data-a="say" data-t="${esc(txt)}">🔊</button><button data-a="shx">Close</button></div>`)}}
+  if(!phrase)wview(txt,await ai(`You are a German tutor for an English-speaking learner at level ${lv}. Sentence: "${ctx}". Tapped word: "${txt}". Reply ONLY with JSON (use null where not applicable, keep German explanations simple, at about level ${lv}): {"lemma":"dictionary form","pos":"noun|verb|adjective|adverb|preposition|conjunction|pronoun|particle","article":"der|die|das|null","plural":null,"genitive":null,"ipa":"","cefr":"A1-C2 level of this word","register":"neutral|formal|colloquial|vulgar","en":["main English meaning first","other meanings"],"sense_en":"meaning in THIS sentence","sense_de":"same in simple German","sentence_en":"natural English translation of the whole sentence","def_de":"clear German definition","explain_en":"2-3 sentence English explanation with nuance","synonyms":[{"de":"","en":""}],"antonyms":[{"de":"","en":""}],"family":[{"de":"related words of the same family","en":""}],"grammar":{"only the applicable keys such as Infinitiv, Praesens er/sie/es, Praeteritum, Partizip II, Hilfsverb, Trennbar, Reflexiv, Kasus, Komparativ, Superlativ":"value"},"compound":"split like Hand + Schuh, or null","collocations":[{"de":"common phrase with the word","en":""}],"examples":[{"de":"","en":""},{"de":"","en":""},{"de":"","en":""}],"tip":"short memory tip or common learner mistake"}`),ctx);
+  else pview(txt,await ai(`You are a German tutor for an English-speaking learner at level ${lv}. Sentence: "${ctx}". Selected phrase: "${txt}". Reply ONLY with JSON (null where not applicable, simple German): {"en":"natural English translation","literal":"word-by-word gloss","def_de":"simple German explanation","explain_en":"English explanation with nuance","idiom":"idiom meaning or null","grammar":"short grammar note (tense, clause type, word order)","register":"neutral|formal|colloquial","key":[{"de":"important word","en":"meaning"}]}`),ctx);
+ }catch(e){let d='';try{d=await wikt(txt)}catch(_){}L={w:txt,r:{lemma:txt},ctx,say:txt};
+  sheet(`${top}<div class="wh"><div class="wt"><h2>${esc(txt)}</h2></div></div>${sec('Dictionary (Wiktionary)',d?`<p style="white-space:pre-wrap">${esc(d)}</p>`:'')}${sec('No AI result','<p class="mut">Add an API key in Settings, or connect to the internet, for the full explanation.</p>')}${act('Save word')}`,1)}}
 function wtap(el){
  const p=el.parentElement,ws=[...p.querySelectorAll('.w')];
  if(pm){if(!anc||anc.p!==p){anc={p,i:ws.indexOf(el)};el.classList.add('sel');return}
@@ -287,7 +326,7 @@ document.addEventListener('click',async e=>{
  const a=e.target.closest('[data-a]');if(!a){return}const x=a.dataset.a,id=a.dataset.id;
  const c=cur&&D.tr[cur.id]||[];
  if(x==='open')open(id);
- else if(x==='close'){$('#pl').hidden=true;persist();mini();view()}
+ else if(x==='close'){pausedBy=false;closeSh();$('#pl').hidden=true;persist();mini();view()}
  else if(x==='expand')$('#pl').hidden=false,mini();
  else if(x==='pp')M.paused?M.play():M.pause();
  else if(x==='back')M.currentTime=Math.max(0,M.currentTime-D.set.skip);
@@ -307,7 +346,7 @@ document.addEventListener('click',async e=>{
  else if(x==='trall')trall();
  else if(x==='shx')closeSh();
  else if(x==='say')speak(a.dataset.t);
- else if(x==='sv'&&L){const r=L.r;if(!D.vocab.some(v=>v.w===(r.lemma||L.w))){D.vocab.push({w:r.lemma||L.w,art:r.article&&r.article!=='null'?r.article:'',en:(r.en||[]).join(', '),de:r.de||'',ctx:L.ctx,ease:2.5,iv:0,n:0,due:Date.now()});save()}toast('Saved to My words')}
+ else if(x==='sv'&&L){const r=L.r;if(!D.vocab.some(v=>v.w===(r.lemma||L.w))){D.vocab.push({w:r.lemma||L.w,art:r.article&&r.article!=='null'?r.article:'',en:(r.en||[]).slice(0,3).join(', '),de:r.def_de||r.de||'',ctx:L.ctx,ease:2.5,iv:0,n:0,due:Date.now()});save()}toast('Saved to My words')}
  else if(x==='fav'){D.fav[cur.id]=!D.fav[cur.id];save();pf()}
  else if(x==='favi'){D.fav[id]=!D.fav[id];save();view()}
  else if(x==='del'){D.lib=D.lib.filter(i=>i.id!==id);idbp('del',id);save();if(cur&&cur.id===id){M.pause();cur=null;mini()}view()}
@@ -319,7 +358,7 @@ document.addEventListener('click',async e=>{
  else if(x==='ac'){draft.ac=a.dataset.v;apply(draft);settings()}
  else if(x==='savest'){if(!dirty())return toast('Nothing to save');D.set={...draft};save();apply();toast('Settings saved');icons();upd()}
  else if(x==='revert'){draft={...D.set};apply();settings()}
- else if(x==='lvl')lvlSheet();else if(x==='exw')exw();else if(x==='quiz')quiz();else if(x==='qa'){a.style.background=a.dataset.ok==='1'?'#16a34a':'#dc2626';a.style.color='#fff'}
+ else if(x==='lk')look(a.dataset.w,a.dataset.w,false);else if(x==='lvl')lvlSheet();else if(x==='exw')exw();else if(x==='quiz')quiz();else if(x==='qa'){a.style.background=a.dataset.ok==='1'?'#16a34a':'#dc2626';a.style.color='#fff'}
  else if(x==='dic')dic();else if(x==='dpl')dplay(0);else if(x==='dsl')dplay(1);else if(x==='dck')dcheck();else if(x==='dnx'){dki=Math.min(dki+1,D.tr[cur.id].length-1);dsheet()}
  else if(x==='shw')shadow();else if(x==='shp'){const q=D.tr[cur.id][shI];idx=-1;M.currentTime=q.s;dkEnd=q.e;M.play()}else if(x==='shr')shrec();else if(x==='shm'){const m=$('#mine');m&&m.src&&m.play()}else if(x==='shn'){shI=Math.min(shI+1,D.tr[cur.id].length-1);ssheet()}
  else if(x==='hid'){tw.classList.toggle('hid');a.classList.toggle('on')}
