@@ -63,6 +63,26 @@ h1{font-size:30px;letter-spacing:-.02em;background:linear-gradient(90deg,var(--f
 #sh{animation:up .25s ease}@keyframes up{from{transform:translateY(30px);opacity:0}}
 #tw.hid .cue p{filter:blur(8px)}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+:root{--h:250}
+body{font-family:ui-rounded,"SF Pro Rounded",system-ui,-apple-system,"Segoe UI",sans-serif}
+input[type=range]{--p:0%;-webkit-appearance:none;appearance:none;height:6px;border-radius:6px;background:linear-gradient(90deg,var(--ac) var(--p),var(--line) var(--p));outline:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--ac);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#fff;border:3px solid var(--ac)}
+#pl{background:radial-gradient(900px 460px at 50% -12%,hsl(var(--h) 85% 58%/.38),transparent 68%),var(--bg)}
+.top{padding:10px 12px;gap:10px}.top b{font-size:17px}
+.top button{width:40px;height:40px;border-radius:50%;padding:0;display:grid;place-items:center;color:var(--fg);background:color-mix(in srgb,var(--card) 70%,transparent);backdrop-filter:blur(10px);border:1px solid var(--line)}
+.main{gap:10px;margin:6px 0}
+.main button{width:52px;height:52px;padding:0;display:grid;place-items:center;border-radius:50%;color:var(--fg);transition:transform .15s,background .15s}
+.main button:active{transform:scale(.9);background:var(--line)}
+.main .pp{width:66px;height:66px;background:linear-gradient(135deg,var(--ac),color-mix(in srgb,var(--ac) 55%,#ec4899));color:#fff}
+.small button,.small select{border-radius:999px}.small .on{background:var(--ac);color:#fff;border-color:var(--ac)}
+#mini button{color:var(--fg);display:grid;place-items:center;padding:4px}#mini svg{width:26px;height:26px}
+.it button{color:var(--mut);display:grid;place-items:center;width:38px;height:38px;border-radius:50%;padding:0}.it button:hover{background:var(--line)}
+.cv svg{color:#fff}
+.cue.on p{text-shadow:0 0 26px color-mix(in srgb,var(--ac) 45%,transparent)}
+#nav button svg{display:block;margin:0 auto 2px}
+.row .btn,.row button,.row select{border-radius:999px}
 </style></head><body>
 <div id="app"></div>
 <div id="mini" hidden><b data-a="expand"></b><button data-a="back">⏪</button><button data-a="pp">▶</button><button data-a="fwd">⏩</button></div>
@@ -85,18 +105,23 @@ h1{font-size:30px;letter-spacing:-.02em;background:linear-gradient(90deg,var(--f
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt=s=>{s=Math.max(0,s|0);return(s/60|0)+':'+String(s%60).padStart(2,'0')};
+const P={down:'<path d="M6 9l6 6 6-6"/>',plus:'<path d="M12 5v14M5 12h14"/>',heart:'<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>',trash:'<path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',prev:'<path d="M19 20L9 12l10-8v16zM5 19V5"/>',next:'<path d="M5 4l10 8-10 8V4zM19 5v14"/>',play:'<polygon points="7 4 20 12 7 20 7 4" fill="currentColor"/>',pause:'<rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor"/>',ccw:'<path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>',cw:'<path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/>',head:'<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>',film:'<rect x="2" y="2" width="20" height="20" rx="3"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/>',globe:'<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',tv:'<rect x="2" y="7" width="20" height="15" rx="2"/><path d="M17 2l-5 5-5-5"/>',sliders:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>'};
+function ic(n,s=22,f){return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`}
+const skipIc=d=>`<svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[d<0?'ccw':'cw']}<text x="12" y="15.2" font-size="7.5" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">${D.set.skip}</text></svg>`;
+const hue=n=>{let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))>>>0;return h%360};
+function icons(){$$('[data-a=close]').forEach(b=>b.innerHTML=ic('down',26));$$('[data-a=addpl]').forEach(b=>b.innerHTML=ic('plus',22));$$('[data-a=back]').forEach(b=>b.innerHTML=skipIc(-1));$$('[data-a=fwd]').forEach(b=>b.innerHTML=skipIc(1));$$('[data-a=ps]').forEach(b=>b.innerHTML=ic('prev',24));$$('[data-a=ns]').forEach(b=>b.innerHTML=ic('next',24));$('#pp').innerHTML=ic(M.paused?'play':'pause',28,true);if(cur)pf();mini()}
 const DEF={theme:'auto',ac:'#4f46e5',skip:10,speed:1,cap:20,lyr:22,pause:true,rew:2,capm:'de',lvl:'B2',peek:true,keys:{},models:{},prim:'gemini',fb:true};
 let D={lib:[],pl:{},fav:{},pos:{},rate:{},tr:{},tl:{},vocab:[],set:{}};
 try{Object.assign(D,JSON.parse(localStorage.getItem('pcfy')||'{}'))}catch(e){}
 D.set={...DEF,...D.set};
-const save=()=>{try{localStorage.setItem('pcfy',JSON.stringify(D))}catch(e){}};
+const save=()=>{try{localStorage.setItem('pcfy',JSON.stringify(D))}catch(e){toast('Storage is full: export a backup in Settings')}};
 const toast=t=>{const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2500)};
 const idb=new Promise(r=>{try{const q=indexedDB.open('pcfy',1);q.onupgradeneeded=()=>q.result.createObjectStore('f');q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)}catch(e){r(null)}});
 const idbp=async(m,k,v)=>{const d=await idb;if(!d)return;return new Promise(r=>{try{const s=d.transaction('f',m==='get'?'readonly':'readwrite').objectStore('f');const q=m==='get'?s.get(k):m==='put'?s.put(v,k):s.delete(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r()}catch(e){r()}})};
 function apply(s=D.set){const r=document.documentElement;s.theme==='auto'?r.removeAttribute('data-theme'):r.setAttribute('data-theme',s.theme);r.style.setProperty('--ac',s.ac);r.style.setProperty('--cap',s.cap+'px');r.style.setProperty('--lyr',s.lyr+'px')}
-const TABS=[['ol','🎧','Offline Listen','off','a'],['ow','🎬','Offline Watch','off','v'],['nl','🌐','Online Listen','on','a'],['nw','📺','Online Watch','on','v'],['st','⚙️','Settings']];
+const TABS=[['ol','head','Offline Listen','off','a'],['ow','film','Offline Watch','off','v'],['nl','globe','Online Listen','on','a'],['nw','tv','Online Watch','on','v'],['st','sliders','Settings']];
 let tab='ol',cur=null,flt='all',idx=-1,loopI=-1,loop=false,pm=false,anc=null,us=0,dopen=false,pausedBy=false,lastSave=0,draft=null,L=null,rv=null;
-$('#nav').innerHTML=TABS.map(t=>`<button data-t="${t[0]}"><span>${t[1]}</span>${t[2]}</button>`).join('');
+$('#nav').innerHTML=TABS.map(t=>`<button data-t="${t[0]}"><span>${ic(t[1],24)}</span>${t[2]}</button>`).join('');
 const M=$('#m'),tw=$('#tw'),cap=$('#cap');
 M.preservesPitch=true;
 /* ---------- library views ---------- */
@@ -111,7 +136,7 @@ function view(){
  h+=t[3]==='off'?`<label class="btn p" style="margin:0">＋ Add ${t[4]==='a'?'audio':'video'} files<input type="file" id="fa" multiple accept="${t[4]==='a'?'audio/*':'video/*'}" hidden></label><button data-a="demo">✨ Load demo</button>`:`<input type="text" id="url" placeholder="${t[4]==='v'?'Media or YouTube URL':'Audio URL (mp3, RSS enclosure)'}" style="flex:1;min-width:180px"><button class="p" data-a="addurl">Add</button>`;
  h+=`</div><div class="row"><select id="flt"><option value="all">All</option><option value="fav" ${flt==='fav'?'selected':''}>♥ Favorites</option>${Object.keys(D.pl).map(p=>`<option value="p:${esc(p)}" ${flt==='p:'+p?'selected':''}>▤ ${esc(p)}</option>`).join('')}</select><button data-a="newpl">＋ Playlist</button></div>`;
  if(cont.length)h+=`<h3>Continue</h3><div class="chips">${cont.map(i=>`<div class="chip" data-a="open" data-id="${i.id}"><b>${esc(i.n)}</b><span class="mut">${fmt(D.pos[i.id])}</span></div>`).join('')}</div>`;
- h+=list.length?list.map(i=>`<div class="it"><div class="cv" style="background:${grad(i.n)}">${i.k==='a'?'🎧':'🎬'}</div><div class="t" data-a="open" data-id="${i.id}"><b>${esc(i.n)}</b><span class="mut">${i.yt?'YouTube':i.url?'Stream':'On device'}${D.tr[i.id]?' · transcript '+level(i.id):''}</span><div class="bar2"><i style="width:${Math.min(100,(D.pos[i.id]||0)/(i.dur||600)*100)}%"></i></div></div><button data-a="favi" data-id="${i.id}">${D.fav[i.id]?'♥':'♡'}</button><button data-a="del" data-id="${i.id}">🗑</button></div>`).join(''):`<div class="empty">${t[3]==='off'?'Nothing here yet. Add files, or load the demo to try transcripts and lookups.':'Paste a link above.'}</div>`;
+ h+=list.length?list.map(i=>`<div class="it"><div class="cv" style="background:${grad(i.n)}">${ic(i.k==='a'?'head':'film',26)}</div><div class="t" data-a="open" data-id="${i.id}"><b>${esc(i.n)}</b><span class="mut">${i.yt?'YouTube':i.url?'Stream':'On device'}${D.tr[i.id]?' · transcript '+level(i.id):''}</span><div class="bar2"><i style="width:${Math.min(100,(D.pos[i.id]||0)/(i.dur||600)*100)}%"></i></div></div><button data-a="favi" data-id="${i.id}">${ic('heart',20,D.fav[i.id])}</button><button data-a="del" data-id="${i.id}">${ic('trash',19)}</button></div>`).join(''):`<div class="empty">${t[3]==='off'?'Nothing here yet. Add files, or load the demo to try transcripts and lookups.':'Paste a link above.'}</div>`;
  if(t[3]==='on')h+=`<div class="card"><h3>German podcasts picked for you</h3><p class="mut">Matched to motorsport, psychology and nutrition. These tend to be fast with technical vocabulary (my estimate: around C1), so start with the learner bridge if needed. Search the name in a podcast app, then paste an episode’s audio URL here or add downloaded MP3s in Offline Listen.</p>${SUG.map(s=>`<p style="margin:8px 0"><span class="mut">${s[0]}</span><br><b>${esc(s[1])}</b><br><span class="mut">${esc(s[2])}</span></p>`).join('')}</div>`;
  $('#app').innerHTML=h;
 }
@@ -123,10 +148,10 @@ async function demo(k){const id='d'+Date.now()+k;await idbp('put',id,wav(48));D.
 function parse(t,dur){
  t=t.replace(/\r/g,'').replace(/^\uFEFF/,'');let c=[];
  if(t.includes('-->')){const f=(h,m,s,ms)=>(+h||0)*3600+ +m*60+ +s+ +('0.'+ms);t.split(/\n\n+/).forEach(b=>{const l=b.split('\n'),i=l.findIndex(x=>x.includes('-->'));if(i<0)return;const m=l[i].match(/(?:(\d+):)?(\d+):(\d+)[.,](\d+)\s*-->\s*(?:(\d+):)?(\d+):(\d+)[.,](\d+)/);if(m)c.push({s:f(...m.slice(1,5)),e:f(...m.slice(5,9)),t:l.slice(i+1).join(' ').replace(/<[^>]+>/g,'').trim()})})}
- else if(/^\s*\[\d+:\d+/m.test(t)){t.split('\n').forEach(l=>{const m=l.match(/^\[(\d+):(\d+(?:\.\d+)?)\]\s*(.*)/);if(m&&m[3].trim())c.push({s:+m[1]*60+ +m[2],e:0,t:m[3].trim()})});c.forEach((x,i)=>x.e=c[i+1]?c[i+1].s:x.s+5)}
+ else if(/^\s*\[\d+:\d+/m.test(t)){t.split('\n').forEach(l=>{const m=l.match(/^((?:\s*\[\d+:\d+(?::\d+)?(?:[.,]\d+)?\])+)\s*(.*)/);if(m&&m[2].trim())for(const q of m[1].matchAll(/\[(\d+):(\d+)(?::(\d+))?(?:[.,](\d+))?\]/g)){const sec=q[3]!==undefined?+q[1]*3600+ +q[2]*60+ +q[3]:+q[1]*60+ +q[2];c.push({s:sec+ +('0.'+(q[4]||0)),e:0,t:m[2].trim()})}});c.sort((a,b)=>a.s-b.s);c.forEach((x,i)=>x.e=c[i+1]?c[i+1].s:x.s+5)}
  else{const ss=t.split(/(?<=[.!?…])\s+|\n+/).map(x=>x.trim()).filter(Boolean),tot=ss.reduce((a,x)=>a+x.length,0);let a=0;ss.forEach(x=>{const d=dur?dur*x.length/tot:0;c.push({s:a,e:a+d,t:x});a+=d})}
  return c.filter(x=>x.t)}
-function setTr(txt){if(!cur)return;const c=parse(txt,cur.yt?0:(M.duration||0));if(!c.length)return toast('Could not read that transcript');D.tr[cur.id]=c;delete D.tl[cur.id];save();idx=-1;rtx();toast(c.length+' lines added'+(/-->|\[\d+:/.test(txt)?'':' (timing estimated from length)'))}
+function setTr(txt){if(!cur)return;const c=parse(txt,cur.yt||!isFinite(M.duration)?0:(M.duration||0));if(!c.length)return toast('Could not read that transcript');D.tr[cur.id]=c;delete D.tl[cur.id];save();idx=-1;rtx();toast(c.length+' lines added'+(/-->|\[\d+:/.test(txt)?'':' (timing estimated from length)'))}
 const words=t=>t.split(/(\s+)/).map(w=>/\S/.test(w)?`<span class="w">${esc(w)}</span>`:w).join('');
 function rtx(){const c=D.tr[cur.id];tw.innerHTML=c&&c.length?c.map((x,i)=>`<div class="cue" data-i="${i}"><button class="ts" data-a="seek" data-i="${i}">${fmt(x.s)}</button><p>${words(x.t)}</p></div>`).join(''):`<div class="empty">No transcript yet.<br>Paste text or upload SRT / VTT / LRC / TXT.<br><br><button class="p" data-a="paste">Add transcript</button><p class="mut">Automatic speech-to-text needs the native app; here you bring the transcript.</p></div>`;hl()}
 function hl(){
@@ -143,7 +168,7 @@ async function open(id){
  const it=D.lib.find(x=>x.id===id);if(!it)return;
  if(cur&&cur.id!==id){D.pos[cur.id]=M.currentTime||0}
  cur=it;idx=-1;loop=false;pm=false;anc=null;dopen=false;$('#drb').hidden=true;$('#drh').textContent='▲ English translation (hidden)';
- const pl=$('#pl');pl.className=(it.yt?'yt ':'')+it.k;pl.hidden=false;$('#pt').textContent=it.n;
+ const pl=$('#pl');pl.className=(it.yt?'yt ':'')+it.k;pl.style.setProperty('--h',hue(it.n));pl.hidden=false;$('#pt').textContent=it.n;
  $('#yt').innerHTML='';$('#lp').classList.remove('on');$('#ph').classList.remove('on');
  const r=D.rate[id]||D.set.speed;$('#sp').value=r;$('#spv').textContent=(+r).toFixed(2)+'x';
  pf();$('#cm').textContent='CC: '+({de:'DE',en2:'DE+EN',off:'OFF'}[D.set.capm]);
@@ -153,14 +178,14 @@ async function open(id){
   M.src=src;M.onloadedmetadata=()=>{M.playbackRate=+r;if(!it.dur)it.dur=M.duration;const p=D.pos[id]||0;M.currentTime=p>10&&p<M.duration-10?Math.max(0,p-D.set.rew):0;$('#sk').max=M.duration;if(it.k==='a'||true)M.play().catch(()=>{})};
   M.onerror=()=>toast('Cannot load this media here (blocked or unsupported)')}
  rtx();ms();view();mini()}
-function pf(){$('#pf').textContent=D.fav[cur.id]?'♥':'♡'}
-function mini(){const m=$('#mini');m.hidden=!cur||!$('#pl').hidden;m.querySelector('b').textContent=cur?cur.n:'';m.querySelector('[data-a=pp]').textContent=M.paused?'▶':'⏸'}
+function pf(){const f=D.fav[cur.id];$('#pf').innerHTML=ic('heart',22,f);$('#pf').style.color=f?'#ef4444':''}
+function mini(){const m=$('#mini');m.hidden=!cur||!$('#pl').hidden;m.querySelector('b').textContent=cur?cur.n:'';m.querySelector('[data-a=pp]').innerHTML=ic(M.paused?'play':'pause',24,true)}
 function persist(){if(cur&&!cur.yt&&M.currentTime){D.pos[cur.id]=M.currentTime;save()}}
-M.ontimeupdate=()=>{if(!cur)return;const t=M.currentTime;if(dkEnd&&t>=dkEnd){M.pause();dkEnd=0}if(!M.paused&&t>lt&&t-lt<1.5)acc(t-lt);lt=t;$('#sk').value=t;$('#tm').textContent=fmt(t)+' / '+fmt(M.duration||0);
+M.ontimeupdate=()=>{if(!cur)return;const t=M.currentTime;if(dkEnd&&t>=dkEnd){M.pause();dkEnd=0}if(!M.paused&&t>lt&&t-lt<1.5)acc(t-lt);lt=t;$('#sk').value=t;$('#sk').style.setProperty('--p',(t/(M.duration||1)*100)+'%');$('#tm').textContent=fmt(t)+' / '+fmt(M.duration||0);
  const c=D.tr[cur.id]||[];if(loop&&c[loopI]&&t>=c[loopI].e-.05){M.currentTime=c[loopI].s;return}
  const i=c.findLastIndex(x=>t>=x.s);if(i!==idx){idx=i;hl()}
  if(Date.now()-lastSave>5000){lastSave=Date.now();persist()}};
-M.onplay=M.onpause=()=>{$('#pp').textContent=M.paused?'▶':'⏸';mini();if(M.paused){persist();try{speechSynthesis.cancel()}catch(e){}}};
+M.onplay=M.onpause=()=>{$('#pp').innerHTML=ic(M.paused?'play':'pause',28,true);mini();if(M.paused){persist();try{speechSynthesis.cancel()}catch(e){}}};
 M.onended=()=>{if(cur){D.pos[cur.id]=0;save()}};
 addEventListener('pagehide',persist);document.addEventListener('visibilitychange',()=>{if(document.hidden)persist()});
 function ms(){try{navigator.mediaSession.metadata=new MediaMetadata({title:cur.n,artist:'Podcastify'});navigator.mediaSession.setActionHandler('play',()=>M.play());navigator.mediaSession.setActionHandler('pause',()=>M.pause());navigator.mediaSession.setActionHandler('seekbackward',()=>M.currentTime-=D.set.skip);navigator.mediaSession.setActionHandler('seekforward',()=>M.currentTime+=D.set.skip)}catch(e){}}
@@ -198,7 +223,21 @@ function dcheck(){const n=s=>(s.match(/[\p{L}\p{N}]+/gu)||[]).map(x=>x.toLowerCa
 function shadow(){if(!(D.tr[cur.id]||[]).length)return toast('Add a transcript first');shI=Math.max(idx,0);ssheet()}
 function ssheet(){const c=D.tr[cur.id];sheet(`<h3>Shadowing ${shI+1}/${c.length}</h3><p style="font-size:20px">${esc(c[shI].t)}</p><div class="row"><button data-a="shp">▶ Line</button><button class="p" data-a="shr" id="shrb">● Record</button><button data-a="shm">▶ Mine</button><button data-a="shn">Next ⏭</button></div><p class="mut">Listen, record yourself saying it, then play both and compare rhythm and sounds.</p><audio id="mine" hidden></audio><button data-a="shx">Close</button>`)}
 async function shrec(){const b=$('#shrb');if(rec&&rec.state==='recording'){rec.stop();return}try{const st=await navigator.mediaDevices.getUserMedia({audio:true}),ch=[];rec=new MediaRecorder(st);rec.ondataavailable=e=>ch.push(e.data);rec.onstop=()=>{st.getTracks().forEach(t=>t.stop());$('#mine').src=URL.createObjectURL(new Blob(ch,{type:rec.mimeType}));b.textContent='● Record again';toast('Recorded. Tap ▶ Mine')};rec.start();b.textContent='■ Stop'}catch(e){toast('Microphone not available here')}}
-async function asr(){const k=(D.set.keys||{}).openai;if(!k)return toast('Add an OpenAI key in Settings');if(!cur||cur.yt)return;toast('Transcribing…');try{const b=cur.url?await (await fetch(cur.url)).blob():await idbp('get',cur.id);if(b.size>25e6)return toast('Over 25 MB (OpenAI limit)');const f=new FormData();f.append('file',b,'a.'+((b.type||'audio/mpeg').split('/')[1]||'mp3'));f.append('model','whisper-1');f.append('language','de');f.append('response_format','verbose_json');const r=await fetch('https://api.openai.com/v1/audio/transcriptions',{method:'POST',headers:{Authorization:'Bearer '+k},body:f});if(!r.ok)throw 0;const j=await r.json();D.tr[cur.id]=j.segments.map(s=>({s:s.start,e:s.end,t:s.text.trim()}));delete D.tl[cur.id];save();idx=-1;rtx();closeSh();toast('Transcript ready')}catch(e){toast('Transcription failed')}}
+const LIM=20e6;
+async function split(b){
+ if(b.size<=LIM)return[{blob:b,name:'a.'+((b.type||'audio/mpeg').split('/')[1]||'mp3').replace('mpeg','mp3')}];
+ const h=new Uint8Array(await b.slice(0,4).arrayBuffer());
+ if((h[0]===0x49&&h[1]===0x44&&h[2]===0x33)||(h[0]===0xFF&&(h[1]&0xE0)===0xE0)){const n=Math.ceil(b.size/LIM),z=Math.ceil(b.size/n);return[...Array(n)].map((_,i)=>({blob:b.slice(i*z,(i+1)*z,'audio/mpeg'),name:'p'+i+'.mp3'}))}
+ const ctx=new (window.OfflineAudioContext||window.webkitOfflineAudioContext)(1,16000,16000),buf=await ctx.decodeAudioData(await b.arrayBuffer()),ch=[...Array(buf.numberOfChannels)].map((_,i)=>buf.getChannelData(i)),N=buf.length,S=16000*480,out=[];
+ for(let o=0,i=0;o<N;o+=S,i++){const n=Math.min(S,N-o),v=new DataView(new ArrayBuffer(44+n*2)),w=(q,t)=>[...t].forEach((c,k)=>v.setUint8(q+k,c.charCodeAt(0)));w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,16000,true);v.setUint32(28,32000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);for(let q=0;q<n;q++){let x=0;for(const c of ch)x+=c[o+q];v.setInt16(44+q*2,Math.max(-1,Math.min(1,x/ch.length))*32767,true)}out.push({blob:new Blob([v],{type:'audio/wav'}),name:'p'+i+'.wav',dur:n/16000})}
+ return out}
+async function tx(p,k){for(let a=0;a<3;a++){const f=new FormData();f.append('file',p.blob,p.name);f.append('model','whisper-1');f.append('language','de');f.append('response_format','verbose_json');const r=await fetch('https://api.openai.com/v1/audio/transcriptions',{method:'POST',headers:{Authorization:'Bearer '+k},body:f});if(r.ok)return r.json();if(r.status===429||r.status>=500){await new Promise(z=>setTimeout(z,2500*(a+1)));continue}throw new Error('OpenAI error '+r.status)}throw new Error('Too many retries')}
+async function asr(){const k=(D.set.keys||{}).openai;if(!k)return toast('Add an OpenAI key in Settings');if(!cur||cur.yt)return;
+ sheet('<h3>Auto-transcribe</h3><p id="asp" class="mut">Preparing audio\u2026</p>');const st=t=>{const e=$('#asp');if(e)e.textContent=t};
+ try{const b=cur.url?await (await fetch(cur.url)).blob():await idbp('get',cur.id);const parts=await split(b),cues=[];let off=0;
+  for(let i=0;i<parts.length;i++){st(`Transcribing part ${i+1} of ${parts.length}\u2026`+(parts.length>1?' (the file was split automatically to fit the AI size limit)':''));const j=await tx(parts[i],k);cues.push(...(j.segments||[]).map(s=>({s:s.start+off,e:s.end+off,t:s.text.trim()})));off+=j.duration||parts[i].dur||0}
+  D.tr[cur.id]=cues.filter(x=>x.t);delete D.tl[cur.id];save();idx=-1;rtx();closeSh();toast(parts.length>1?`Done: ${parts.length} parts joined`:'Transcript ready')}
+ catch(e){st('Failed: '+(e.message||e)+'. For non-MP3 files over 20 MB, convert the file to MP3 and try again.')}}
 /* ---------- AI lookup ---------- */
 async function ai(pr){
  if(window.claude){try{const s=await claude.use('sample');if(s)return await s.json(pr,{modelTier:'quick'})}catch(e){}}
@@ -276,7 +315,7 @@ document.addEventListener('click',async e=>{
  else if(x==='addurl'){const u=$('#url').value.trim();if(!u)return;const k=TABS.find(t=>t[0]===tab)[4],m=u.match(/(?:youtu\.be\/|v=)([\w-]{11})/);const it={id:'u'+Date.now(),n:m?'YouTube '+m[1]:decodeURIComponent(u.split('?')[0].split('/').pop()||u),k,mode:'on'};if(m){if(k!=='v')return toast('YouTube works in Online Watch only');it.yt=m[1]}else it.url=u;D.lib.push(it);save();view()}
  else if(x==='demo'){demo(TABS.find(t=>t[0]===tab)[4])}
  else if(x==='ac'){draft.ac=a.dataset.v;apply(draft);settings()}
- else if(x==='savest'){if(!dirty())return toast('Nothing to save');D.set={...draft};save();apply();toast('Settings saved');upd()}
+ else if(x==='savest'){if(!dirty())return toast('Nothing to save');D.set={...draft};save();apply();toast('Settings saved');icons();upd()}
  else if(x==='revert'){draft={...D.set};apply();settings()}
  else if(x==='lvl')lvlSheet();else if(x==='exw')exw();else if(x==='quiz')quiz();else if(x==='qa'){a.style.background=a.dataset.ok==='1'?'#16a34a':'#dc2626';a.style.color='#fff'}
  else if(x==='dic')dic();else if(x==='dpl')dplay(0);else if(x==='dsl')dplay(1);else if(x==='dck')dcheck();else if(x==='dnx'){dki=Math.min(dki+1,D.tr[cur.id].length-1);dsheet()}
@@ -296,6 +335,6 @@ document.addEventListener('change',async e=>{const t=e.target;
  else if(t.id==='ft'&&t.files[0]){setTr(await t.files[0].text());t.value='';closeSh()}});
 document.addEventListener('input',e=>{const t=e.target;if(t.dataset.key&&draft){draft.keys={...(draft.keys||{}),[t.dataset.key]:t.value.trim()};upd();return}if(t.dataset.model&&draft){draft.models={...(draft.models||{}),[t.dataset.model]:t.value.trim()};upd();return}const k=t.dataset.k;if(!k||!draft)return;draft[k]=t.type==='checkbox'?t.checked:'n' in t.dataset?+t.value:t.value;apply(draft);upd()});
 $('#nav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(tab==='st'&&b.dataset.t!=='st'&&draft&&dirty()){toast('Unsaved changes discarded');}draft=null;apply();tab=b.dataset.t;flt='all';view()});
-apply();view();
+apply();icons();view();
 try{if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
 </script></body></html>
