@@ -106,6 +106,8 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 .num{flex:none;min-width:26px;height:22px;padding:0 6px;border-radius:8px;display:grid;place-items:center;font-size:11px;font-weight:700;background:color-mix(in srgb,var(--ac) 16%,transparent);color:var(--ac)}.num:empty{display:none}
 [data-tr]:empty::before{content:"\2026";opacity:.4}.cx span[data-tr]{min-height:1em}
 .cue .ct{min-width:0}.cue .en{display:none;color:var(--mut);font-size:calc(var(--lyr)*.72);line-height:1.4;margin-top:3px;font-family:ui-rounded,system-ui,sans-serif}#tw.showen .cue .en:not(:empty){display:block}
+.estb{display:flex;gap:10px;align-items:center;justify-content:space-between;margin:0 12px;padding:8px 12px;border-radius:14px;background:color-mix(in srgb,var(--ac) 12%,var(--card));font-size:13px}.estb[hidden]{display:none}.estb button{border-radius:999px;font-size:13px;padding:6px 12px;flex:none}
+#tw.plain .cue{opacity:1;transform:none}#tw.plain .cue.on p{color:inherit;font-weight:inherit;text-shadow:none}
 </style></head><body>
 <div id="app"></div>
 <div id="mini" hidden><b data-a="expand"></b><button data-a="back">⏪</button><button data-a="pp">▶</button><button data-a="fwd">⏩</button></div>
@@ -113,13 +115,13 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 <div id="pl" hidden>
  <div class="top"><button data-a="close">⌄</button><b id="pt"></b><button data-a="fav" id="pf">♡</button><button data-a="addpl">＋</button></div>
  <div id="stage"><video id="m" playsinline></video><div id="cap"></div></div><div id="yt"></div>
- <div id="tw"></div>
+ <div id="estb" class="estb" hidden><span>Timing is only estimated from the text length.</span><button class="p" data-a="sync">Sync to audio</button></div><div id="tw"></div>
  <div id="dr"><button id="drh" data-a="drt">▲ English translation (hidden)</button><div id="drb" hidden></div></div>
  <div class="ctl" id="ctl">
   <input type="range" id="sk" min="0" max="100" step="0.1" value="0"><div class="row" style="justify-content:space-between;margin:0"><span class="mut" id="tm">0:00 / 0:00</span><span class="mut" id="spl"></span></div>
   <div class="main"><button data-a="ps">⏮</button><button data-a="back" id="bb">⏪</button><button class="pp" data-a="pp" id="pp">▶</button><button data-a="fwd" id="bf">⏩</button><button data-a="ns">⏭</button></div>
   <div class="small"><input type="range" id="sp" min="0.5" max="3" step="0.05" style="width:110px"><span id="spv" class="mut">1.0x</span>
-   <button data-a="loop" id="lp">🔁 Sentence</button><button data-a="phr" id="ph">✂ Phrase</button><button data-a="capm" id="cm">CC: DE</button><button data-a="paste">📄 Transcript</button><button data-a="lvl">📊 Level</button><button data-a="dic">✍ Dictation</button><button data-a="shw">🎤 Shadow</button><button data-a="hid">🙈 Hide text</button><button data-a="en" id="enb">EN lines</button></div>
+   <button data-a="loop" id="lp">🔁 Sentence</button><button data-a="phr" id="ph">✂ Phrase</button><button data-a="capm" id="cm">CC: DE</button><button data-a="paste">📄 Transcript</button><button data-a="lvl">📊 Level</button><button data-a="dic">✍ Dictation</button><button data-a="shw">🎤 Shadow</button><button data-a="hid">🙈 Hide text</button><button data-a="en" id="enb">EN lines</button><button data-a="lyr" id="lyb">Lyrics: ON</button></div>
  </div>
 </div>
 <div id="sh" hidden></div><div id="toast"></div>
@@ -168,14 +170,70 @@ function wav(sec){const sr=8000,n=sr*sec,b=new ArrayBuffer(44+n),v=new DataView(
 const DEMO=[['Willkommen zurück beim Rennwochenende! Heute sprechen wir über die neue Motorenregel.','Welcome back to race weekend! Today we talk about the new engine rule.'],['Die Ingenieure müssen das Auto leichter und effizienter machen.','The engineers have to make the car lighter and more efficient.'],['Besonders wichtig ist die Batterie, denn sie liefert fast die Hälfte der Leistung.','The battery is especially important because it delivers almost half the power.'],['Wenn der Fahrer bremst, gewinnt das Auto Energie zurück.','When the driver brakes, the car recovers energy.'],['Beim Boxenstopp wechseln die Mechaniker alle vier Reifen in unter drei Sekunden.','In the pit stop the mechanics change all four tyres in under three seconds.'],['Eine falsche Strategie kann das ganze Rennen entscheiden.','A wrong strategy can decide the whole race.'],['Deshalb analysieren die Teams jede Runde mit tausenden Daten.','That is why teams analyse every lap with thousands of data points.'],['Nach dem Rennen sprechen wir über die Siegerehrung und die Meisterschaft.','After the race we talk about the podium ceremony and the championship.']];
 async function demo(k){const id='d'+Date.now()+k;await idbp('put',id,wav(48));D.lib.push({id,n:'Demo: Formel 1, Technik erklärt',k,mode:'off',demo:1,dur:48});D.tr[id]=DEMO.map((x,i)=>({s:i*6,e:i*6+6,t:x[0]}));D.tl[id]=DEMO.map(x=>x[1]);save();view();toast('Demo added (silent track, voice reads each line)')}
 /* ---------- transcript ---------- */
+const nrm=w=>w.toLowerCase().replace(/ß/g,'ss').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+function sim(a,b){if(a===b)return 2;let l=0;while(l<a.length&&a[l]===b[l])l++;return l>=Math.max(3,Math.min(a.length,b.length)-1)&&Math.abs(a.length-b.length)<=2?1:-1}
+function alignPlain(cues,aw){
+ const A=aw.map(x=>({n:nrm(x.word||''),s:x.start,e:x.end})).filter(x=>x.n&&isFinite(x.s)),T=[],ci=[];
+ cues.forEach((c,k)=>c.t.split(/\s+/).forEach(w=>{const n=nrm(w);if(n){T.push(n);ci.push(k)}}));
+ const n=T.length,m=A.length;if(!n||!m)return{cues:cues.map(c=>({s:0,e:0,t:c.t})),ok:0};
+ const B=500,W=2*B+1,ratio=m/n,ctr=j=>Math.round(j*ratio),dir=new Uint8Array((n+1)*W);let prev=new Int32Array(W),cur=new Int32Array(W);const NEG=-1e9;
+ for(let d=0;d<W;d++){const i=ctr(0)-B+d;prev[d]=i>=0&&i<=m?-i:NEG}
+ for(let j=1;j<=n;j++){const c0=ctr(j)-B,pc0=ctr(j-1)-B;
+  for(let d=0;d<W;d++){const i=c0+d;if(i<0||i>m){cur[d]=NEG;continue}
+   let best=NEG,dr=0,pd=i-pc0;if(pd>=0&&pd<W&&prev[pd]>NEG){best=prev[pd]-1;dr=1}
+   if(i>0){pd=i-1-pc0;if(pd>=0&&pd<W&&prev[pd]>NEG){const v=prev[pd]+sim(T[j-1],A[i-1].n);if(v>best){best=v;dr=0}}}
+   if(d>0&&cur[d-1]>NEG&&cur[d-1]-1>best){best=cur[d-1]-1;dr=2}
+   cur[d]=best;dir[j*W+d]=dr}
+  const t=prev;prev=cur;cur=t}
+ let bd=0,bv=NEG;for(let d=0;d<W;d++){const i=ctr(n)-B+d;if(i<0||i>m||prev[d]<=NEG)continue;const v=prev[d]-(m-i);if(v>bv){bv=v;bd=d}}
+ const mi=new Int32Array(n).fill(-1);let j=n,d=bd;
+ while(j>0){const i=ctr(j)-B+d,dr=dir[j*W+d];
+  if(dr===0){if(i>0&&sim(T[j-1],A[i-1].n)>0)mi[j-1]=i-1;j--;d=(i-1)-(ctr(j)-B)}
+  else if(dr===1){j--;d=i-(ctr(j)-B)}else d--;
+  if(d<0||d>=W)break}
+ const first=new Array(cues.length).fill(-1),last=new Array(cues.length).fill(-1),cnt=new Array(cues.length).fill(0),tot=new Array(cues.length).fill(0);
+ for(let q=0;q<n;q++){const k=ci[q];tot[k]++;if(mi[q]>=0){if(first[k]<0)first[k]=mi[q];last[k]=mi[q];cnt[k]++}}
+ let ok=0,pe=0;const out=cues.map((c,k)=>{if(first[k]>=0){if(cnt[k]>=Math.ceil(.3*tot[k]))ok++;pe=A[last[k]].e;return{s:A[first[k]].s,e:pe,t:c.t}}const o={s:pe,e:pe+Math.max(1,tot[k])*0.35,t:c.t};pe=o.e;return o});
+ for(let q=1;q<out.length;q++)if(out[q].s<out[q-1].s)out[q].s=out[q-1].s;
+ for(let q=0;q<out.length-1;q++)if(out[q+1].s>out[q].s)out[q].e=out[q+1].s;
+ return{cues:out,ok}}
+let syncRun=0,wsp=null;
+const tsec=t=>{const q=String(t).split(':').map(Number);return q.length===3?q[0]*3600+q[1]*60+q[2]:q.length===2?q[0]*60+q[1]:(q[0]||0)};
+function syncAudio(){if(!cur||cur.yt||!(D.tr[cur.id]||[]).length)return;const K=D.set.keys||{};
+ sheet(`<h3>Sync text to audio</h3><p class='mut'>Pick a free way. Keep this tab open while it works.</p><div class='sec'><h4>On this device</h4><p>No account and no cost. It downloads a small speech model once, then listens to the audio on your own phone or computer. It can take a while on a phone and is much faster on a laptop.</p><div class='row'><button class='p' data-a='syn1' data-m='whisper-base'>Balanced (75 MB)</button><button data-a='syn1' data-m='whisper-small'>Best German (240 MB)</button><button data-a='syn1' data-m='whisper-tiny'>Fastest (40 MB)</button></div></div><div class='sec'><h4>Gemini free key</h4><p>Faster, and free with a free key from Google AI Studio. Timing is a little less exact.${K.gemini?'':' Add your key in Settings first.'}</p><button data-a='syn2'>Use Gemini</button></div>${K.openai?"<div class='sec'><h4>OpenAI (paid)</h4><p>Most exact. Costs about $0.36 per hour of audio.</p><button data-a='syn3'>Use OpenAI</button></div>":''}<button data-a='shx'>Close</button>`)}
+function syncUI(){sheet("<h3>Sync text to audio</h3><p id='asp' class='mut'>Preparing\u2026</p><p class='mut'>Keep this tab open. Tap Cancel to stop.</p><button data-a='shx'>Cancel</button>");syncRun=1;return t=>{const e=$('#asp');if(e)e.textContent=t}}
+async function srcBlob(){return cur.url?await (await fetch(cur.url)).blob():await idbp('get',cur.id)}
+function syncDone(plain,words){const r=alignPlain(plain,words);D.tr[cur.id]=r.cues;save();idx=-1;rtx();enx();closeSh();toast(`Synced ${Math.round(r.ok/plain.length*100)}% of lines to the audio`)}
+async function pcm(b){const ctx=new (window.OfflineAudioContext||window.webkitOfflineAudioContext)(1,16000,16000),buf=await ctx.decodeAudioData(await b.arrayBuffer());if(buf.numberOfChannels===1)return buf.getChannelData(0);const o=new Float32Array(buf.length),n=buf.numberOfChannels;for(let c=0;c<n;c++){const d=buf.getChannelData(c);for(let i=0;i<o.length;i++)o[i]+=d[i]/n}return o}
+async function loadWh(model,st){if(wsp&&wsp.m===model)return wsp.p;st('Loading the speech model (first time only)\u2026');const tf=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2/+esm'),cb=x=>{if(x.status==='progress')st('Downloading the speech model '+Math.round(x.progress)+'%')};let p;try{p=await tf.pipeline('automatic-speech-recognition','Xenova/'+model,{device:'webgpu',progress_callback:cb})}catch(e){p=await tf.pipeline('automatic-speech-recognition','Xenova/'+model,{progress_callback:cb})}wsp={m:model,p};return p}
+async function syncLocal(model){const plain=D.tr[cur.id],st=syncUI();
+ try{const p=await loadWh(model,st),parts=await split(await srcBlob(),6e6),words=[];let off=0;
+  for(let i=0;i<parts.length;i++){if(!syncRun)return;st(`Listening to part ${i+1} of ${parts.length}\u2026`);const au=await pcm(parts[i].blob),o=await p(au,{language:'german',task:'transcribe',return_timestamps:'word',chunk_length_s:30,stride_length_s:5});words.push(...(o.chunks||[]).map(c=>({word:(c.text||'').trim(),start:(c.timestamp[0]||0)+off,end:(c.timestamp[1]==null?(c.timestamp[0]||0)+.3:c.timestamp[1])+off})));off+=au.length/16000}
+  if(syncRun)syncDone(plain,words)}
+ catch(e){st('Failed: '+(e.message||e)+'. Try the Fastest option, or another file format.')}}
+async function gem(blob,k){const b64=await new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result.split(',')[1]);f.readAsDataURL(blob)}),m=(D.set.models||{}).gemini||DM.gemini;
+ for(let a=0;a<3;a++){const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(k)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{inline_data:{mime_type:blob.type||'audio/mpeg',data:b64}},{text:'Transcribe this German audio completely. Reply ONLY with a JSON array with one item per sentence or phrase, like [{"t":"m:ss start time inside THIS audio","x":"text"}]. Times must be accurate.'}]}],generationConfig:{responseMimeType:'application/json'}})});
+  if(r.status===429){await new Promise(z=>setTimeout(z,20000));continue}if(!r.ok)throw new Error('Gemini error '+r.status);const j=await r.json();return JSON.parse(j.candidates[0].content.parts.map(x=>x.text||'').join(''))}throw new Error('Gemini free limit reached, try again in a few minutes')}
+async function syncGem(){const k=(D.set.keys||{}).gemini;if(!k)return toast('Add a free Gemini key in Settings first');const plain=D.tr[cur.id],st=syncUI();
+ try{const parts=await split(await srcBlob(),12e6),tot=cur.dur||M.duration||0,sz=parts.reduce((a,x)=>a+x.blob.size,0),words=[];let ob=0,od=0;
+  for(let i=0;i<parts.length;i++){if(!syncRun)return;st(`Listening to part ${i+1} of ${parts.length}\u2026`);const off=parts[i].dur!=null?od:(tot?tot*ob/sz:0),sg=(await gem(parts[i].blob,k)).map(s=>({s:tsec(s.t),x:String(s.x||'').trim()})).filter(s=>s.x);
+   sg.forEach((s,q)=>{const ws=s.x.split(/\s+/),e=q+1<sg.length?sg[q+1].s:s.s+ws.length*.4,L=ws.reduce((a,w)=>a+w.length+1,0);let c=s.s;ws.forEach(w=>{const d=Math.max(.05,(e-s.s)*(w.length+1)/L);words.push({word:w,start:c+off,end:c+d+off});c+=d})});ob+=parts[i].blob.size;if(parts[i].dur!=null)od+=parts[i].dur}
+  if(syncRun)syncDone(plain,words)}
+ catch(e){st('Failed: '+(e.message||e))}}
+async function syncOpenAI(){const k=(D.set.keys||{}).openai;if(!k)return toast('Syncing listens to the audio, so it needs an OpenAI key in Settings');if(!cur||cur.yt)return;const plain=D.tr[cur.id];if(!plain||!plain.length)return;
+ sheet('<h3>Sync text to audio</h3><p id="asp" class="mut">Preparing audio\u2026 (this listens to the whole file with your OpenAI key, about $0.36 per hour of audio)</p>');const st=t=>{const e=$('#asp');if(e)e.textContent=t};
+ try{const b=cur.url?await (await fetch(cur.url)).blob():await idbp('get',cur.id);const parts=await split(b),words=[];let off=0;
+  for(let i=0;i<parts.length;i++){st(`Listening to part ${i+1} of ${parts.length}\u2026`);const j=await tx(parts[i],k,1);words.push(...(j.words||[]).map(x=>({word:x.word,start:x.start+off,end:x.end+off})));off+=j.duration||parts[i].dur||0}
+  const r=alignPlain(plain,words);D.tr[cur.id]=r.cues;save();idx=-1;rtx();enx();closeSh();toast(`Synced ${Math.round(r.ok/plain.length*100)}% of lines to the audio`)}
+ catch(e){st('Failed: '+(e.message||e)+'. For non-MP3 files over 20 MB, convert to MP3 and try again.')}}
 function pairEn(c,en){en.sort((a,b)=>a.s-b.s);let j=0;for(const e of en){while(j+1<c.length&&Math.abs(c[j+1].s-e.s)<=Math.abs(c[j].s-e.s))j++;c[j].en=(c[j].en?c[j].en+' ':'')+e.t}}
-function enx(){tw.classList.toggle('showen',!!D.showEn);const b=$('#enb');if(b)b.classList.toggle('on',!!D.showEn)}
+function enx(){const eb=$('#estb'),tc=cur&&D.tr[cur.id];if(eb)eb.hidden=!(tc&&tc.length&&tc.every(x=>x.est));tw.classList.toggle('plain',D.lyr===false);const lb=$('#lyb');if(lb){lb.textContent='Lyrics: '+(D.lyr===false?'OFF':'ON');lb.classList.toggle('on',D.lyr!==false)}tw.classList.toggle('showen',!!D.showEn);const b=$('#enb');if(b)b.classList.toggle('on',!!D.showEn)}
 function parse(t,dur){
  const en=[];t=t.replace(/\r/g,'').replace(/^\uFEFF/,'').replace(/^[ \t]*\[EN[ \t:]+((?:\d+:)?\d+:\d+(?:[.,]\d+)?)\][ \t]*(.*)$/gim,(m,a,b)=>{const q=a.replace(',','.').split(':').map(Number),s=q.length===3?q[0]*3600+q[1]*60+q[2]:q[0]*60+q[1];if(b.trim())en.push({s,t:b.trim()});return''}).replace(/^[ \t]*\[DE[ \t:]+/gim,'[');let c=[];
  if(t.includes('-->')){const f=(h,m,s,ms)=>(+h||0)*3600+ +m*60+ +s+ +('0.'+ms);t.split(/\n\n+/).forEach(b=>{const l=b.split('\n'),i=l.findIndex(x=>x.includes('-->'));if(i<0)return;const m=l[i].match(/(?:(\d+):)?(\d+):(\d+)[.,](\d+)\s*-->\s*(?:(\d+):)?(\d+):(\d+)[.,](\d+)/);if(m)c.push({s:f(...m.slice(1,5)),e:f(...m.slice(5,9)),t:l.slice(i+1).join(' ').replace(/<[^>]+>/g,'').trim()})})}
  else if(/^\s*\[\d+:\d+/m.test(t)){t.split('\n').forEach(l=>{const m=l.match(/^((?:\s*\[\d+:\d+(?::\d+)?(?:[.,]\d+)?\])+)\s*(.*)/);if(m&&m[2].trim())for(const q of m[1].matchAll(/\[(\d+):(\d+)(?::(\d+))?(?:[.,](\d+))?\]/g)){const sec=q[3]!==undefined?+q[1]*3600+ +q[2]*60+ +q[3]:+q[1]*60+ +q[2];c.push({s:sec+ +('0.'+(q[4]||0)),e:0,t:m[2].trim()})}});c.sort((a,b)=>a.s-b.s);c.forEach((x,i)=>x.e=c[i+1]?c[i+1].s:x.s+5)}
  else if((t.match(/^\s*[\[(]?(?:\d+:)?\d{1,3}:\d\d(?:[.,]\d+)?[\])]?(\s|$)/gm)||[]).length>=3){const re=/^\s*[\[(]?(?:(\d+):)?(\d{1,3}):(\d\d)(?:[.,](\d+))?[\])]?\s*(.*)$/;let last=null;t.split('\n').forEach(l=>{const m=l.match(re);if(m){last={s:(+m[1]||0)*3600+ +m[2]*60+ +m[3]+ +('0.'+(m[4]||0)),e:0,t:(m[5]||'').replace(/^[-–—]+\s*[\[(]?(?:\d+:)?\d{1,3}:\d\d(?:[.,]\d+)?[\])]?\s*/,'').trim()};c.push(last)}else if(l.trim()&&last)last.t+=(last.t?' ':'')+l.trim()});c=c.filter(x=>x.t).sort((a,b)=>a.s-b.s);c.forEach((x,i)=>x.e=c[i+1]?c[i+1].s:x.s+5)}
- else{const ss=t.split(/(?<=[.!?…])\s+|\n+/).map(x=>x.trim()).filter(Boolean),tot=ss.reduce((a,x)=>a+x.length,0);let a=0;ss.forEach(x=>{const d=dur?dur*x.length/tot:0;c.push({s:a,e:a+d,t:x});a+=d})}
+ else{const ss=t.split(/(?<=[.!?…])\s+|\n+/).map(x=>x.trim()).filter(Boolean),tot=ss.reduce((a,x)=>a+x.length,0);let a=0;ss.forEach(x=>{const d=dur?dur*x.length/tot:0;c.push({s:a,e:a+d,t:x,est:1});a+=d})}
  c=c.filter(x=>x.t);if(en.length&&c.length)pairEn(c,en);return c}
 async function rd(f){const b=await f.arrayBuffer();try{return new TextDecoder('utf-8',{fatal:true}).decode(b)}catch(e){return new TextDecoder('windows-1252').decode(b)}}
 function setTr(txt){if(!cur)return;const c=parse(txt,cur.yt?0:(isFinite(M.duration)&&M.duration>0?M.duration:(cur.dur||0)));if(!c.length)return toast('Could not read that transcript');const ne=c.filter(x=>x.en).length;if(ne)D.tl[cur.id]=c.map(x=>x.en||'');else delete D.tl[cur.id];c.forEach(x=>delete x.en);D.tr[cur.id]=c;save();idx=-1;rtx();enx();toast(c.length+' lines added'+(ne?' + '+ne+' English lines':'')+(/-->|\[\d+:/.test(txt)?'':' (timing estimated from length)'))}
@@ -183,7 +241,7 @@ const words=t=>t.split(/(\s+)/).map(w=>/\S/.test(w)?`<span class="w">${esc(w)}</
 function rtx(){const c=D.tr[cur.id];tw.innerHTML=c&&c.length?c.map((x,i)=>`<div class="cue" data-i="${i}"><button class="ts" data-a="seek" data-i="${i}">${fmt(x.s)}</button><div class="ct"><p>${words(x.t)}</p><small class="en">${esc((D.tl[cur.id]||[])[i]||'')}</small></div></div>`).join(''):`<div class="empty">No transcript yet.<br>Paste text or upload SRT / VTT / LRC / TXT.<br><br><button class="p" data-a="paste">Add transcript</button><p class="mut">Automatic speech-to-text needs the native app; here you bring the transcript.</p></div>`;hl()}
 function hl(){
  const c=D.tr[cur.id]||[];$$('.cue.on').forEach(e=>e.classList.remove('on'));
- const e=tw.querySelector(`.cue[data-i="${idx}"]`);if(e){e.classList.add('on');if(Date.now()-us>3000&&!cur.yt)e.scrollIntoView({block:'center',behavior:'smooth'})}
+ const e=tw.querySelector(`.cue[data-i="${idx}"]`);if(e){e.classList.add('on');if(Date.now()-us>3000&&!cur.yt&&D.lyr!==false)e.scrollIntoView({block:'center',behavior:'smooth'})}
  const x=c[idx],en=D.tl[cur.id]&&D.tl[cur.id][idx];
  cap.innerHTML=x&&D.set.capm!=='off'&&cur.k==='v'?`<span>${words(x.t)}</span>${D.set.capm==='en2'&&en?`<br><em>${esc(en)}</em>`:''}`:'';
  drw();if(cur.demo&&!M.paused&&x)speak(x.t)}
@@ -251,14 +309,14 @@ function shadow(){if(!(D.tr[cur.id]||[]).length)return toast('Add a transcript f
 function ssheet(){const c=D.tr[cur.id];sheet(`<h3>Shadowing ${shI+1}/${c.length}</h3><p style="font-size:20px">${esc(c[shI].t)}</p><div class="row"><button data-a="shp">▶ Line</button><button class="p" data-a="shr" id="shrb">● Record</button><button data-a="shm">▶ Mine</button><button data-a="shn">Next ⏭</button></div><p class="mut">Listen, record yourself saying it, then play both and compare rhythm and sounds.</p><audio id="mine" hidden></audio><button data-a="shx">Close</button>`)}
 async function shrec(){const b=$('#shrb');if(rec&&rec.state==='recording'){rec.stop();return}try{const st=await navigator.mediaDevices.getUserMedia({audio:true}),ch=[];rec=new MediaRecorder(st);rec.ondataavailable=e=>ch.push(e.data);rec.onstop=()=>{st.getTracks().forEach(t=>t.stop());$('#mine').src=URL.createObjectURL(new Blob(ch,{type:rec.mimeType}));b.textContent='● Record again';toast('Recorded. Tap ▶ Mine')};rec.start();b.textContent='■ Stop'}catch(e){toast('Microphone not available here')}}
 const LIM=20e6;
-async function split(b){
- if(b.size<=LIM)return[{blob:b,name:'a.'+((b.type||'audio/mpeg').split('/')[1]||'mp3').replace('mpeg','mp3')}];
+async function split(b,lim=LIM){
+ if(b.size<=lim)return[{blob:b,name:'a.'+((b.type||'audio/mpeg').split('/')[1]||'mp3').replace('mpeg','mp3')}];
  const h=new Uint8Array(await b.slice(0,4).arrayBuffer());
- if((h[0]===0x49&&h[1]===0x44&&h[2]===0x33)||(h[0]===0xFF&&(h[1]&0xE0)===0xE0)){const n=Math.ceil(b.size/LIM),z=Math.ceil(b.size/n);return[...Array(n)].map((_,i)=>({blob:b.slice(i*z,(i+1)*z,'audio/mpeg'),name:'p'+i+'.mp3'}))}
+ if((h[0]===0x49&&h[1]===0x44&&h[2]===0x33)||(h[0]===0xFF&&(h[1]&0xE0)===0xE0)){const n=Math.ceil(b.size/lim),z=Math.ceil(b.size/n);return[...Array(n)].map((_,i)=>({blob:b.slice(i*z,(i+1)*z,'audio/mpeg'),name:'p'+i+'.mp3'}))}
  const ctx=new (window.OfflineAudioContext||window.webkitOfflineAudioContext)(1,16000,16000),buf=await ctx.decodeAudioData(await b.arrayBuffer()),ch=[...Array(buf.numberOfChannels)].map((_,i)=>buf.getChannelData(i)),N=buf.length,S=16000*480,out=[];
  for(let o=0,i=0;o<N;o+=S,i++){const n=Math.min(S,N-o),v=new DataView(new ArrayBuffer(44+n*2)),w=(q,t)=>[...t].forEach((c,k)=>v.setUint8(q+k,c.charCodeAt(0)));w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,16000,true);v.setUint32(28,32000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);for(let q=0;q<n;q++){let x=0;for(const c of ch)x+=c[o+q];v.setInt16(44+q*2,Math.max(-1,Math.min(1,x/ch.length))*32767,true)}out.push({blob:new Blob([v],{type:'audio/wav'}),name:'p'+i+'.wav',dur:n/16000})}
  return out}
-async function tx(p,k){for(let a=0;a<3;a++){const f=new FormData();f.append('file',p.blob,p.name);f.append('model','whisper-1');f.append('language','de');f.append('response_format','verbose_json');const r=await fetch('https://api.openai.com/v1/audio/transcriptions',{method:'POST',headers:{Authorization:'Bearer '+k},body:f});if(r.ok)return r.json();if(r.status===429||r.status>=500){await new Promise(z=>setTimeout(z,2500*(a+1)));continue}throw new Error('OpenAI error '+r.status)}throw new Error('Too many retries')}
+async function tx(p,k,wd){for(let a=0;a<3;a++){const f=new FormData();f.append('file',p.blob,p.name);f.append('model','whisper-1');f.append('language','de');f.append('response_format','verbose_json');if(wd)f.append('timestamp_granularities[]','word');const r=await fetch('https://api.openai.com/v1/audio/transcriptions',{method:'POST',headers:{Authorization:'Bearer '+k},body:f});if(r.ok)return r.json();if(r.status===429||r.status>=500){await new Promise(z=>setTimeout(z,2500*(a+1)));continue}throw new Error('OpenAI error '+r.status)}throw new Error('Too many retries')}
 async function asr(){const k=(D.set.keys||{}).openai;if(!k)return toast('Add an OpenAI key in Settings');if(!cur||cur.yt)return;
  sheet('<h3>Auto-transcribe</h3><p id="asp" class="mut">Preparing audio\u2026</p>');const st=t=>{const e=$('#asp');if(e)e.textContent=t};
  try{const b=cur.url?await (await fetch(cur.url)).blob():await idbp('get',cur.id);const parts=await split(b),cues=[];let off=0;
@@ -273,7 +331,7 @@ async function ai(pr){
  for(const p of order){try{return jp(await raw(p,pr))}catch(e){err=e;if(D.set.fb===false)break}}
  throw err}
 function sheet(h,rich){const s=$('#sh');s.innerHTML=h;s.hidden=false;s.classList.toggle('rich',!!rich);s.scrollTop=0}
-function closeSh(){$('#sh').hidden=true;tw.style.visibility='';dkEnd=0;if(cur&&!cur.yt)M.playbackRate=D.rate[cur.id]||D.set.speed;$$('.sel').forEach(e=>e.classList.remove('sel'));anc=null;if(pausedBy&&cur){M.play().catch(()=>{});pausedBy=false}}
+function closeSh(){syncRun=0;$('#sh').hidden=true;tw.style.visibility='';dkEnd=0;if(cur&&!cur.yt)M.playbackRate=D.rate[cur.id]||D.set.speed;$$('.sel').forEach(e=>e.classList.remove('sel'));anc=null;if(pausedBy&&cur){M.play().catch(()=>{});pausedBy=false}}
 const clean=s=>s.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu,'');
 const nn=v=>v&&v!=='null'&&v!=='N/A'&&v!=='none';
 const rxe=t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
@@ -417,7 +475,7 @@ document.addEventListener('click',async e=>{
  else if(x==='lk')look(a.dataset.w,a.dataset.w,false);else if(x==='lvl')lvlSheet();else if(x==='exw')exw();else if(x==='quiz')quiz();else if(x==='qa'){a.style.background=a.dataset.ok==='1'?'#16a34a':'#dc2626';a.style.color='#fff'}
  else if(x==='dic')dic();else if(x==='dpl')dplay(0);else if(x==='dsl')dplay(1);else if(x==='dck')dcheck();else if(x==='dnx'){dki=Math.min(dki+1,D.tr[cur.id].length-1);dsheet()}
  else if(x==='shw')shadow();else if(x==='shp'){const q=D.tr[cur.id][shI];idx=-1;M.currentTime=q.s;dkEnd=q.e;M.play()}else if(x==='shr')shrec();else if(x==='shm'){const m=$('#mine');m&&m.src&&m.play()}else if(x==='shn'){shI=Math.min(shI+1,D.tr[cur.id].length-1);ssheet()}
- else if(x==='en'){if(!D.tl[cur.id])toast('No English lines yet. Use Translate in the English drawer.');D.showEn=!D.showEn;save();enx()}else if(x==='hid'){tw.classList.toggle('hid');a.classList.toggle('on')}
+ else if(x==='lyr'){D.lyr=D.lyr===false;save();enx()}else if(x==='sync')syncAudio();else if(x==='syn1')syncLocal(a.dataset.m);else if(x==='syn2')syncGem();else if(x==='syn3')syncOpenAI();else if(x==='en'){if(!D.tl[cur.id])toast('No English lines yet. Use Translate in the English drawer.');D.showEn=!D.showEn;save();enx()}else if(x==='hid'){tw.classList.toggle('hid');a.classList.toggle('on')}
  else if(x==='kn'&&L){D.known=D.known||[];const w=(L.r.lemma||L.w).toLowerCase();if(!D.known.includes(w))D.known.push(w);save();toast('Marked as known')}
  else if(x==='asr')asr();
  else if(x==='cpy'){$('#bx').select();try{await navigator.clipboard.writeText($('#bx').value)}catch(e){document.execCommand('copy')}toast('Copied')}
