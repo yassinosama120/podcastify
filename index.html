@@ -105,6 +105,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 .mrow{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line)}.mrow:first-child{border-top:0;padding-top:0}
 .num{flex:none;min-width:26px;height:22px;padding:0 6px;border-radius:8px;display:grid;place-items:center;font-size:11px;font-weight:700;background:color-mix(in srgb,var(--ac) 16%,transparent);color:var(--ac)}.num:empty{display:none}
 [data-tr]:empty::before{content:"\2026";opacity:.4}.cx span[data-tr]{min-height:1em}
+.cue .ct{min-width:0}.cue .en{display:none;color:var(--mut);font-size:calc(var(--lyr)*.72);line-height:1.4;margin-top:3px;font-family:ui-rounded,system-ui,sans-serif}#tw.showen .cue .en:not(:empty){display:block}
 </style></head><body>
 <div id="app"></div>
 <div id="mini" hidden><b data-a="expand"></b><button data-a="back">⏪</button><button data-a="pp">▶</button><button data-a="fwd">⏩</button></div>
@@ -118,7 +119,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
   <input type="range" id="sk" min="0" max="100" step="0.1" value="0"><div class="row" style="justify-content:space-between;margin:0"><span class="mut" id="tm">0:00 / 0:00</span><span class="mut" id="spl"></span></div>
   <div class="main"><button data-a="ps">⏮</button><button data-a="back" id="bb">⏪</button><button class="pp" data-a="pp" id="pp">▶</button><button data-a="fwd" id="bf">⏩</button><button data-a="ns">⏭</button></div>
   <div class="small"><input type="range" id="sp" min="0.5" max="3" step="0.05" style="width:110px"><span id="spv" class="mut">1.0x</span>
-   <button data-a="loop" id="lp">🔁 Sentence</button><button data-a="phr" id="ph">✂ Phrase</button><button data-a="capm" id="cm">CC: DE</button><button data-a="paste">📄 Transcript</button><button data-a="lvl">📊 Level</button><button data-a="dic">✍ Dictation</button><button data-a="shw">🎤 Shadow</button><button data-a="hid">🙈 Hide text</button></div>
+   <button data-a="loop" id="lp">🔁 Sentence</button><button data-a="phr" id="ph">✂ Phrase</button><button data-a="capm" id="cm">CC: DE</button><button data-a="paste">📄 Transcript</button><button data-a="lvl">📊 Level</button><button data-a="dic">✍ Dictation</button><button data-a="shw">🎤 Shadow</button><button data-a="hid">🙈 Hide text</button><button data-a="en" id="enb">EN lines</button></div>
  </div>
 </div>
 <div id="sh" hidden></div><div id="toast"></div>
@@ -167,17 +168,19 @@ function wav(sec){const sr=8000,n=sr*sec,b=new ArrayBuffer(44+n),v=new DataView(
 const DEMO=[['Willkommen zurück beim Rennwochenende! Heute sprechen wir über die neue Motorenregel.','Welcome back to race weekend! Today we talk about the new engine rule.'],['Die Ingenieure müssen das Auto leichter und effizienter machen.','The engineers have to make the car lighter and more efficient.'],['Besonders wichtig ist die Batterie, denn sie liefert fast die Hälfte der Leistung.','The battery is especially important because it delivers almost half the power.'],['Wenn der Fahrer bremst, gewinnt das Auto Energie zurück.','When the driver brakes, the car recovers energy.'],['Beim Boxenstopp wechseln die Mechaniker alle vier Reifen in unter drei Sekunden.','In the pit stop the mechanics change all four tyres in under three seconds.'],['Eine falsche Strategie kann das ganze Rennen entscheiden.','A wrong strategy can decide the whole race.'],['Deshalb analysieren die Teams jede Runde mit tausenden Daten.','That is why teams analyse every lap with thousands of data points.'],['Nach dem Rennen sprechen wir über die Siegerehrung und die Meisterschaft.','After the race we talk about the podium ceremony and the championship.']];
 async function demo(k){const id='d'+Date.now()+k;await idbp('put',id,wav(48));D.lib.push({id,n:'Demo: Formel 1, Technik erklärt',k,mode:'off',demo:1,dur:48});D.tr[id]=DEMO.map((x,i)=>({s:i*6,e:i*6+6,t:x[0]}));D.tl[id]=DEMO.map(x=>x[1]);save();view();toast('Demo added (silent track, voice reads each line)')}
 /* ---------- transcript ---------- */
+function pairEn(c,en){en.sort((a,b)=>a.s-b.s);let j=0;for(const e of en){while(j+1<c.length&&Math.abs(c[j+1].s-e.s)<=Math.abs(c[j].s-e.s))j++;c[j].en=(c[j].en?c[j].en+' ':'')+e.t}}
+function enx(){tw.classList.toggle('showen',!!D.showEn);const b=$('#enb');if(b)b.classList.toggle('on',!!D.showEn)}
 function parse(t,dur){
- t=t.replace(/\r/g,'').replace(/^\uFEFF/,'');let c=[];
+ const en=[];t=t.replace(/\r/g,'').replace(/^\uFEFF/,'').replace(/^[ \t]*\[EN[ \t:]+((?:\d+:)?\d+:\d+(?:[.,]\d+)?)\][ \t]*(.*)$/gim,(m,a,b)=>{const q=a.replace(',','.').split(':').map(Number),s=q.length===3?q[0]*3600+q[1]*60+q[2]:q[0]*60+q[1];if(b.trim())en.push({s,t:b.trim()});return''}).replace(/^[ \t]*\[DE[ \t:]+/gim,'[');let c=[];
  if(t.includes('-->')){const f=(h,m,s,ms)=>(+h||0)*3600+ +m*60+ +s+ +('0.'+ms);t.split(/\n\n+/).forEach(b=>{const l=b.split('\n'),i=l.findIndex(x=>x.includes('-->'));if(i<0)return;const m=l[i].match(/(?:(\d+):)?(\d+):(\d+)[.,](\d+)\s*-->\s*(?:(\d+):)?(\d+):(\d+)[.,](\d+)/);if(m)c.push({s:f(...m.slice(1,5)),e:f(...m.slice(5,9)),t:l.slice(i+1).join(' ').replace(/<[^>]+>/g,'').trim()})})}
  else if(/^\s*\[\d+:\d+/m.test(t)){t.split('\n').forEach(l=>{const m=l.match(/^((?:\s*\[\d+:\d+(?::\d+)?(?:[.,]\d+)?\])+)\s*(.*)/);if(m&&m[2].trim())for(const q of m[1].matchAll(/\[(\d+):(\d+)(?::(\d+))?(?:[.,](\d+))?\]/g)){const sec=q[3]!==undefined?+q[1]*3600+ +q[2]*60+ +q[3]:+q[1]*60+ +q[2];c.push({s:sec+ +('0.'+(q[4]||0)),e:0,t:m[2].trim()})}});c.sort((a,b)=>a.s-b.s);c.forEach((x,i)=>x.e=c[i+1]?c[i+1].s:x.s+5)}
  else if((t.match(/^\s*[\[(]?(?:\d+:)?\d{1,3}:\d\d(?:[.,]\d+)?[\])]?(\s|$)/gm)||[]).length>=3){const re=/^\s*[\[(]?(?:(\d+):)?(\d{1,3}):(\d\d)(?:[.,](\d+))?[\])]?\s*(.*)$/;let last=null;t.split('\n').forEach(l=>{const m=l.match(re);if(m){last={s:(+m[1]||0)*3600+ +m[2]*60+ +m[3]+ +('0.'+(m[4]||0)),e:0,t:(m[5]||'').replace(/^[-–—]+\s*[\[(]?(?:\d+:)?\d{1,3}:\d\d(?:[.,]\d+)?[\])]?\s*/,'').trim()};c.push(last)}else if(l.trim()&&last)last.t+=(last.t?' ':'')+l.trim()});c=c.filter(x=>x.t).sort((a,b)=>a.s-b.s);c.forEach((x,i)=>x.e=c[i+1]?c[i+1].s:x.s+5)}
  else{const ss=t.split(/(?<=[.!?…])\s+|\n+/).map(x=>x.trim()).filter(Boolean),tot=ss.reduce((a,x)=>a+x.length,0);let a=0;ss.forEach(x=>{const d=dur?dur*x.length/tot:0;c.push({s:a,e:a+d,t:x});a+=d})}
- return c.filter(x=>x.t)}
+ c=c.filter(x=>x.t);if(en.length&&c.length)pairEn(c,en);return c}
 async function rd(f){const b=await f.arrayBuffer();try{return new TextDecoder('utf-8',{fatal:true}).decode(b)}catch(e){return new TextDecoder('windows-1252').decode(b)}}
-function setTr(txt){if(!cur)return;const c=parse(txt,cur.yt?0:(isFinite(M.duration)&&M.duration>0?M.duration:(cur.dur||0)));if(!c.length)return toast('Could not read that transcript');D.tr[cur.id]=c;delete D.tl[cur.id];save();idx=-1;rtx();toast(c.length+' lines added'+(/-->|\[\d+:/.test(txt)?'':' (timing estimated from length)'))}
+function setTr(txt){if(!cur)return;const c=parse(txt,cur.yt?0:(isFinite(M.duration)&&M.duration>0?M.duration:(cur.dur||0)));if(!c.length)return toast('Could not read that transcript');const ne=c.filter(x=>x.en).length;if(ne)D.tl[cur.id]=c.map(x=>x.en||'');else delete D.tl[cur.id];c.forEach(x=>delete x.en);D.tr[cur.id]=c;save();idx=-1;rtx();enx();toast(c.length+' lines added'+(ne?' + '+ne+' English lines':'')+(/-->|\[\d+:/.test(txt)?'':' (timing estimated from length)'))}
 const words=t=>t.split(/(\s+)/).map(w=>/\S/.test(w)?`<span class="w">${esc(w)}</span>`:w).join('');
-function rtx(){const c=D.tr[cur.id];tw.innerHTML=c&&c.length?c.map((x,i)=>`<div class="cue" data-i="${i}"><button class="ts" data-a="seek" data-i="${i}">${fmt(x.s)}</button><p>${words(x.t)}</p></div>`).join(''):`<div class="empty">No transcript yet.<br>Paste text or upload SRT / VTT / LRC / TXT.<br><br><button class="p" data-a="paste">Add transcript</button><p class="mut">Automatic speech-to-text needs the native app; here you bring the transcript.</p></div>`;hl()}
+function rtx(){const c=D.tr[cur.id];tw.innerHTML=c&&c.length?c.map((x,i)=>`<div class="cue" data-i="${i}"><button class="ts" data-a="seek" data-i="${i}">${fmt(x.s)}</button><div class="ct"><p>${words(x.t)}</p><small class="en">${esc((D.tl[cur.id]||[])[i]||'')}</small></div></div>`).join(''):`<div class="empty">No transcript yet.<br>Paste text or upload SRT / VTT / LRC / TXT.<br><br><button class="p" data-a="paste">Add transcript</button><p class="mut">Automatic speech-to-text needs the native app; here you bring the transcript.</p></div>`;hl()}
 function hl(){
  const c=D.tr[cur.id]||[];$$('.cue.on').forEach(e=>e.classList.remove('on'));
  const e=tw.querySelector(`.cue[data-i="${idx}"]`);if(e){e.classList.add('on');if(Date.now()-us>3000&&!cur.yt)e.scrollIntoView({block:'center',behavior:'smooth'})}
@@ -201,7 +204,7 @@ async function open(id){
  else{let src=it.url;if(!src){const b=await idbp('get',id);if(!b){toast('File missing. Add it again.');return}src=URL.createObjectURL(b)}
   M.src=src;M.onloadedmetadata=()=>{M.playbackRate=+r;if(!it.dur)it.dur=M.duration;const p=D.pos[id]||0;M.currentTime=p>10&&p<M.duration-10?Math.max(0,p-D.set.rew):0;$('#sk').max=M.duration;if(it.k==='a'||true)M.play().catch(()=>{})};
   M.onerror=()=>toast('Cannot load this media here (blocked or unsupported)')}
- rtx();ms();view();mini()}
+ rtx();enx();ms();view();mini()}
 function pf(){const f=D.fav[cur.id];$('#pf').innerHTML=ic('heart',22,f);$('#pf').style.color=f?'#ef4444':''}
 function mini(){const m=$('#mini');m.hidden=!cur||!$('#pl').hidden;m.querySelector('b').textContent=cur?cur.n:'';m.querySelector('[data-a=pp]').innerHTML=ic(M.paused?'play':'pause',24,true)}
 function persist(){if(cur&&!cur.yt&&M.currentTime){D.pos[cur.id]=M.currentTime;save()}}
@@ -414,7 +417,7 @@ document.addEventListener('click',async e=>{
  else if(x==='lk')look(a.dataset.w,a.dataset.w,false);else if(x==='lvl')lvlSheet();else if(x==='exw')exw();else if(x==='quiz')quiz();else if(x==='qa'){a.style.background=a.dataset.ok==='1'?'#16a34a':'#dc2626';a.style.color='#fff'}
  else if(x==='dic')dic();else if(x==='dpl')dplay(0);else if(x==='dsl')dplay(1);else if(x==='dck')dcheck();else if(x==='dnx'){dki=Math.min(dki+1,D.tr[cur.id].length-1);dsheet()}
  else if(x==='shw')shadow();else if(x==='shp'){const q=D.tr[cur.id][shI];idx=-1;M.currentTime=q.s;dkEnd=q.e;M.play()}else if(x==='shr')shrec();else if(x==='shm'){const m=$('#mine');m&&m.src&&m.play()}else if(x==='shn'){shI=Math.min(shI+1,D.tr[cur.id].length-1);ssheet()}
- else if(x==='hid'){tw.classList.toggle('hid');a.classList.toggle('on')}
+ else if(x==='en'){if(!D.tl[cur.id])toast('No English lines yet. Use Translate in the English drawer.');D.showEn=!D.showEn;save();enx()}else if(x==='hid'){tw.classList.toggle('hid');a.classList.toggle('on')}
  else if(x==='kn'&&L){D.known=D.known||[];const w=(L.r.lemma||L.w).toLowerCase();if(!D.known.includes(w))D.known.push(w);save();toast('Marked as known')}
  else if(x==='asr')asr();
  else if(x==='cpy'){$('#bx').select();try{await navigator.clipboard.writeText($('#bx').value)}catch(e){document.execCommand('copy')}toast('Copied')}
