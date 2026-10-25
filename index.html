@@ -102,6 +102,9 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 .actbar{position:sticky;bottom:0;display:flex;gap:8px;padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line)}.actbar button{border-radius:999px}
 .sk{height:64px;margin:10px 14px;border-radius:16px;background:linear-gradient(90deg,var(--line),color-mix(in srgb,var(--line) 40%,var(--card)),var(--line));background-size:200% 100%;animation:shm 1.2s infinite linear}@keyframes shm{to{background-position:-200% 0}}
 @media(max-width:380px){.two{grid-template-columns:1fr}}
+.mrow{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line)}.mrow:first-child{border-top:0;padding-top:0}
+.num{flex:none;min-width:26px;height:22px;padding:0 6px;border-radius:8px;display:grid;place-items:center;font-size:11px;font-weight:700;background:color-mix(in srgb,var(--ac) 16%,transparent);color:var(--ac)}.num:empty{display:none}
+[data-tr]:empty::before{content:"\2026";opacity:.4}.cx span[data-tr]{min-height:1em}
 </style></head><body>
 <div id="app"></div>
 <div id="mini" hidden><b data-a="expand"></b><button data-a="back">⏪</button><button data-a="pp">▶</button><button data-a="fwd">⏩</button></div>
@@ -290,6 +293,57 @@ ${nn(r.tip)?`<div class="sec tip"><h4>Tip</h4><p>${esc(r.tip)}</p></div>`:''}${a
 function pview(txt,r,ctx){L={w:txt,r:{lemma:txt,en:[r.en],def_de:r.def_de},ctx,say:txt};
  sheet(`${shTop}<div class="wh"><span class="chp">Phrase</span>${nn(r.register)?`<span class="chp">${esc(r.register)}</span>`:''}<div class="wt"><h2 style="font-size:24px">${esc(txt)}</h2></div><div class="wmain">${esc(r.en||'')}</div></div>
 ${sec('In context',`<p class="cs">${hlc(ctx,txt)}</p>`)}${sec('Word by word',nn(r.literal)?`<p>${esc(r.literal)}</p>`:'')}${sec('Explanation',expl(r))}${sec('Idiom',nn(r.idiom)?`<p>${esc(r.idiom)}</p>`:'')}${sec('Grammar',nn(r.grammar)?`<p>${esc(r.grammar)}</p>`:'')}${sec('Key words',cxs(r.key))}${act('Save phrase')}`,1)}
+/* ---------- offline-key dictionary view (Wiktionary + English) ---------- */
+const LBL={Worttrennung:'Syllables',Aussprache:'Pronunciation',Bedeutungen:'Meanings',Herkunft:'Origin',Synonyme:'Synonyms','Gegenwörter':'Opposites',Oberbegriffe:'Broader terms',Unterbegriffe:'Narrower terms',Beispiele:'Examples',Redewendungen:'Idioms','Charakteristische Wortkombinationen':'Common word combinations',Wortbildungen:'Word formations','Grammatische Merkmale':'Grammar','Sinnverwandte Wörter':'Related words',Verkleinerungsformen:'Diminutives','Weibliche Wortformen':'Feminine forms','Männliche Wortformen':'Masculine forms','Abkürzungen':'Abbreviations',Anmerkung:'Note',Anmerkungen:'Notes'};
+const CHIPH=new Set(['Synonyme','Gegenwörter','Oberbegriffe','Unterbegriffe','Wortbildungen','Sinnverwandte Wörter','Verkleinerungsformen','Weibliche Wortformen','Männliche Wortformen']);
+const GR=[['Deklinierte Form','inflected form'],['Konjugierte Form','conjugated form'],['des Substantivs','of the noun'],['des Verbs','of the verb'],['des Adjektivs','of the adjective'],['des Adverbs','of the adverb'],['des Pronomens','of the pronoun'],['Nominativ','nominative'],['Genitiv','genitive'],['Dativ','dative'],['Akkusativ','accusative'],['Singular','singular'],['Plural','plural'],['Präsens','present'],['Präteritum','preterite'],['Perfekt','perfect'],['Futur','future'],['Konjunktiv','subjunctive'],['Indikativ','indicative'],['Imperativ','imperative'],['Partizip','participle'],['Infinitiv','infinitive'],['Komparativ','comparative'],['Superlativ','superlative'],['Positiv','positive'],['Person','person'],['Substantiv','noun'],['Verb','verb'],['Adjektiv','adjective'],['Adverb','adverb'],['Pronomen','pronoun'],['Präposition','preposition'],['Konjunktion','conjunction'],['Interjektion','interjection'],['Hilfsverb','auxiliary verb'],['Aktiv','active'],['Passiv','passive']];
+const gr=t=>GR.reduce((x,[a,b])=>x.split(a).join(b),t);
+const hdr=el=>el.matches&&el.matches('h2,h3,h4')?el:(el.classList&&el.classList.contains('mw-heading')?el.querySelector('h2,h3,h4'):null);
+async function parseDe(w){
+ const r=await fetch('https://de.wiktionary.org/w/api.php?action=parse&format=json&origin=*&redirects=1&prop=text&disableeditsection=1&disabletoc=1&page='+encodeURIComponent(w));const j=await r.json();if(!j.parse)return null;
+ const root=new DOMParser().parseFromString(j.parse.text['*'],'text/html').body,blocks=[];let on=false,cur=null,head='';
+ const kids=root.children.length===1&&root.children[0].classList.contains('mw-parser-output')?root.children[0].children:root.children;
+ for(const el of kids){const h=hdr(el);
+  if(h){const lv=h.tagName,t=h.textContent.replace(/\[.*?\]/g,'').trim();if(lv==='H2'){on=/\(Deutsch\)/.test(t);cur=null;continue}if(!on)continue;if(lv==='H3'){cur={pos:t,items:{}};blocks.push(cur);head='';continue}if(lv==='H4'&&/Übersetz/.test(t))cur=null;continue}
+  if(!on||!cur||el.tagName==='TABLE')continue;const tx=el.textContent.replace(/\s+/g,' ').trim();
+  if(el.tagName==='P'&&/^[^:]{2,60}:$/.test(tx)){head=tx.slice(0,-1);continue}
+  if(/^(DL|UL|OL)$/.test(el.tagName)){const its=[...el.querySelectorAll('dd,li')].filter(x=>!x.querySelector('dd,li')).map(x=>x.textContent.replace(/\s+/g,' ').trim()).filter(Boolean);(cur.items[head]=cur.items[head]||[]).push(...its)}
+  else if(el.tagName==='P'&&head&&tx)(cur.items[head]=cur.items[head]||[]).push(tx)}
+ return{word:j.parse.title,blocks}}
+async function enw(w){try{const r=await fetch('https://en.wiktionary.org/api/rest_v1/page/definition/'+encodeURIComponent(w));if(!r.ok)return[];const j=await r.json();return(j.de||[]).map(e=>({pos:e.partOfSpeech,defs:(e.definitions||[]).map(d=>new DOMParser().parseFromString(d.definition||'','text/html').body.textContent.trim()).filter(Boolean)}))}catch(e){return[]}}
+async function mt(t){t=t.trim();if(!t)return'';D.mt=D.mt||{};if(D.mt[t])return D.mt[t];try{const r=await fetch('https://api.mymemory.translated.net/get?langpair=de|en&q='+encodeURIComponent(t.slice(0,450)));const x=((await r.json()).responseData||{}).translatedText||'';if(!x||/MYMEMORY WARNING|QUERY LENGTH/i.test(x))return'';if(Object.keys(D.mt).length>800)D.mt={};D.mt[t]=x;return x}catch(e){return''}}
+async function trFill(){const els=$$('#sh [data-tr]');let i=0;const run=async()=>{while(i<els.length){const e=els[i++],x=await mt(e.dataset.tr);if(x)e.textContent=x;else e.remove()}};await Promise.all([run(),run(),run(),run()]);save()}
+const strip=t=>t.replace(/^(\[[^\]]*\]\s*)+/,'').trim();
+const tr1=t=>`<div class="mut" data-tr="${esc(t)}"></div>`;
+function dblock(b,ctx){
+ let h='';const it=b.items,lab=k=>(LBL[k]||k);
+ for(const k of Object.keys(it)){const v=it[k];if(!v.length||/Hörbeispiele|Reime|Übersetz/.test(k))continue;let body='';
+  if(k==='Aussprache'||k==='Worttrennung'){body=v.filter(x=>!/^Hörbeispiele/.test(x)).map(x=>`<p>${esc(x)}</p>`).join('')}
+  else if(k==='Grammatische Merkmale'){body=v.map(x=>`<div class="exr"><div><div>${esc(x)}</div><div class="mut">${esc(gr(x))}</div></div></div>`).join('')}
+  else if(CHIPH.has(k)){const ws=[...new Set(v.join(', ').replace(/\[[^\]]*\]/g,'').split(/[,;]\s*/).map(x=>x.trim()).filter(x=>x&&x.length<40))].slice(0,10);body=ws.map(w=>`<button class="cx" data-a="lk" data-w="${esc(w)}"><b>${esc(w)}</b><span data-tr="${esc(w)}"></span></button>`).join('')}
+  else if(k==='Bedeutungen'){body=v.map(x=>{const n=(x.match(/^\[([^\]]*)\]/)||[])[1]||'';const t=strip(x);return`<div class="mrow"><span class="num">${esc(n)}</span><div><div>${esc(t)}</div>${tr1(t)}</div></div>`}).join('')}
+  else{body=v.slice(0,8).map(x=>{const n=(x.match(/^\[([^\]]*)\]/)||[])[1]||'',t=strip(x);return`<div class="mrow">${n?`<span class="num">${esc(n)}</span>`:''}<div><div>${esc(t)}</div>${tr1(t)}</div></div>`}).join('')}
+  h+=sec(`${esc(k)} <span class="mut" style="text-transform:none;letter-spacing:0">· ${esc(lab(k))}</span>`,body)}
+ return h}
+async function dictView(txt,ctx){
+ const cap=s=>s[0].toUpperCase()+s.slice(1);let page=null;
+ for(const w of [...new Set([txt,txt.toLowerCase(),cap(txt)])]){try{page=await parseDe(w)}catch(e){}if(page&&page.blocks.length)break}
+ if(!page||!page.blocks.length){L={w:txt,r:{lemma:txt},ctx,say:txt};return sheet(`${shTop}<div class="wh"><div class="wt"><h2>${esc(txt)}</h2></div></div>${sec('No result','<p class="mut">No dictionary entry was found, or you are offline. Add an AI key in Settings for a full explanation.</p>')}${act('Save word')}`,1)}
+ const all=pg=>pg.blocks.map(b=>b.pos).join(' '),hasM=pg=>pg.blocks.some(b=>b.items['Bedeutungen']);
+ let base=page,lemma=null;
+ if(!hasM(page)){const m=(page.blocks.map(b=>(b.items['Grammatische Merkmale']||[]).join(' ')).join(' ')).match(/(?:Substantivs|Verbs|Adjektivs|Adverbs|Pronomens)\s+([^\s,.;()]+)/);if(m){lemma=m[1];try{const p2=await parseDe(lemma);if(p2&&p2.blocks.length)base=p2}catch(e){}}}
+ const [enF,enB]=await Promise.all([lemma?enw(page.word):[],enw(base.word)]);
+ const b0=base.blocks[0],gm=(b0.pos.match(/,\s*([mfn])\b/)||[])[1],art=gm?{m:'der',f:'die',n:'das'}[gm]:'';
+ const ipa=((Object.values(b0.items.Aussprache||[]).join(' ')).match(/IPA:\s*(\[[^\]]+\])/)||[])[1]||'';
+ const eng=[...enB,...enF].flatMap(e=>e.defs).filter(Boolean),mean0=strip((b0.items.Bedeutungen||[''])[0]);
+ L={w:txt,ctx,say:base.word,r:{lemma:base.word,article:art,en:eng.slice(0,3),def_de:mean0}};
+ const enSec=(a,t)=>a.length?sec(t,a.map(e=>`<span class="chp" style="margin:0 0 6px">${esc(e.pos||'')}</span><ol class="ml">${e.defs.slice(0,5).map(d=>`<li>${esc(d)}</li>`).join('')}</ol>`).join('')):'';
+ sheet(`${shTop}<div class="wh"><div class="wt">${art?`<span class="art ${art}">${art}</span>`:''}<h2>${esc(base.word)}</h2></div><div>${base.blocks.map(b=>`<span class="chp">${esc(b.pos)} · ${esc(gr(b.pos))}</span>`).join('')}${ipa?`<span class="mut" style="margin-left:6px">${esc(ipa)}</span>`:''}</div>${eng[0]?`<div class="wmain">${esc(eng[0])}</div>`:''}</div>
+${lemma?sec('Form tapped',`<p><b>${esc(page.word)}</b> <span class="mut">· ${esc(gr(all(page)))}</span></p>${enF.length?`<p class="mut">${esc(enF.flatMap(e=>e.defs)[0]||'')}</p>`:''}${page.blocks.flatMap(b=>b.items['Grammatische Merkmale']||[]).map(x=>`<div class="exr"><div><div>${esc(x)}</div><div class="mut">${esc(gr(x))}</div></div></div>`).join('')}`):''}
+${ctx?sec('In this sentence',`<p class="cs">${hlc(ctx,txt)}</p>${tr1(ctx)}`):''}
+${enSec(enB,'English dictionary')}${base.blocks.map(b=>dblock(b,ctx)).join('')}
+<p class="mut" style="margin:10px 18px;font-size:12px">Source: Wiktionary (CC BY-SA). English for German items is machine translated (MyMemory).</p>${act('Save word',`<button data-a="kn">${ic('ok',18)} Known</button>`)}`,1);
+ trFill()}
 async function look(txt,ctx,phrase){
  if(D.set.pause&&!M.paused&&!pausedBy){M.pause();pausedBy=true}
  sheet(`${shTop}<div class="wh"><div class="wt"><h2>${esc(txt)}</h2></div></div><div class="sk"></div><div class="sk"></div><div class="sk" style="width:60%"></div>`,1);
@@ -297,8 +351,7 @@ async function look(txt,ctx,phrase){
  try{
   if(!phrase)wview(txt,await ai(`You are a German tutor for an English-speaking learner at level ${lv}. Sentence: "${ctx}". Tapped word: "${txt}". Reply ONLY with JSON (use null where not applicable, keep German explanations simple, at about level ${lv}): {"lemma":"dictionary form","pos":"noun|verb|adjective|adverb|preposition|conjunction|pronoun|particle","article":"der|die|das|null","plural":null,"genitive":null,"ipa":"","cefr":"A1-C2 level of this word","register":"neutral|formal|colloquial|vulgar","en":["main English meaning first","other meanings"],"sense_en":"meaning in THIS sentence","sense_de":"same in simple German","sentence_en":"natural English translation of the whole sentence","def_de":"clear German definition","explain_en":"2-3 sentence English explanation with nuance","synonyms":[{"de":"","en":""}],"antonyms":[{"de":"","en":""}],"family":[{"de":"related words of the same family","en":""}],"grammar":{"only the applicable keys such as Infinitiv, Praesens er/sie/es, Praeteritum, Partizip II, Hilfsverb, Trennbar, Reflexiv, Kasus, Komparativ, Superlativ":"value"},"compound":"split like Hand + Schuh, or null","collocations":[{"de":"common phrase with the word","en":""}],"examples":[{"de":"","en":""},{"de":"","en":""},{"de":"","en":""}],"tip":"short memory tip or common learner mistake"}`),ctx);
   else pview(txt,await ai(`You are a German tutor for an English-speaking learner at level ${lv}. Sentence: "${ctx}". Selected phrase: "${txt}". Reply ONLY with JSON (null where not applicable, simple German): {"en":"natural English translation","literal":"word-by-word gloss","def_de":"simple German explanation","explain_en":"English explanation with nuance","idiom":"idiom meaning or null","grammar":"short grammar note (tense, clause type, word order)","register":"neutral|formal|colloquial","key":[{"de":"important word","en":"meaning"}]}`),ctx);
- }catch(e){let d='';try{d=await wikt(txt)}catch(_){}L={w:txt,r:{lemma:txt},ctx,say:txt};
-  sheet(`${shTop}<div class="wh"><div class="wt"><h2>${esc(txt)}</h2></div></div>${sec('Dictionary (Wiktionary)',d?`<p style="white-space:pre-wrap">${esc(d)}</p>`:'')}${sec('No AI result','<p class="mut">Add an API key in Settings, or connect to the internet, for the full explanation.</p>')}${act('Save word')}`,1)}}
+ }catch(e){await dictView(txt,ctx)}}
 function wtap(el){
  const p=el.parentElement,ws=[...p.querySelectorAll('.w')];
  if(pm){if(!anc||anc.p!==p){anc={p,i:ws.indexOf(el)};el.classList.add('sel');return}
